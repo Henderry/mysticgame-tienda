@@ -1,0 +1,20 @@
+﻿using AutoMapper;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using Tienda.Application.DTOs;
+using Tienda.Infraestructure.Models;
+
+namespace Tienda.Application.Profiles
+{
+    public class UsuarioProfile : Profile
+    {
+        public UsuarioProfile()
+        {
+            CreateMap<UsuarioDTO, Usuario>().ReverseMap();
+            CreateMap<UsuarioDTO, Usuario>();
+        }
+    }
+}
