@@ -1,0 +1,64 @@
+﻿@model IEnumerable<Tienda.Application.DTOs.CategoriaDTO>
+
+@section Styles{
+    <link rel="stylesheet" href="~/css/styleHome.css">
+    <link rel="stylesheet" href="~/css/styleCategoria.css">
+}
+
+<div class="banner">
+   
+    <div class="header">
+        <h1>Game</h1>
+    </div>
+    
+        <div class="slider" style="--quantity: 10">
+        <div class="item" style="--position: 1"><img src="~/img/1.jpg" alt=""></div>
+        <div class="item" style="--position: 2"><img src="~/img/2.jpg" alt=""></div>
+        <div class="item" style="--position: 3"><img src="~/img/3.jpg" alt=""></div>
+        <div class="item" style="--position: 4"><img src="~/img/4.jpg" alt=""></div>
+        <div class="item" style="--position: 5"><img src="~/img/5.jpg" alt=""></div>
+        <div class="item" style="--position: 6"><img src="~/img/6.jpg" alt=""></div>
+        <div class="item" style="--position: 7"><img src="~/img/7.jpg" alt=""></div>
+        <div class="item" style="--position: 8"><img src="~/img/8.jpg" alt=""></div>
+        <div class="item" style="--position: 9"><img src="~/img/11.jpg" alt=""></div>
+        <div class="item" style="--position: 10"><img src="~/img/10.jpg" alt=""></div>
+        </div>
+    
+    
+    <div class="author-info">
+        <div class="author">
+            <h2>MysticGame</h2>
+           
+            <p>Navega y Encuetra productos maravillosos como: video juegos, consolas, controles y mucho más.</p>
+        </div>
+    </div>
+</div>
+
+<section class="categories-slider-section">
+    <h2 style="font-family:'Poppins', sans-serif; font-size: 1.3rem; color: white; text-transform: uppercase;">Categorías</h2>
+    <div class="container" style="padding: 10rem;">
+        <div id="image-track" data-mouse-down-at="0" data-prev-percentage="0" style="margin-top: 50px;">
+            @foreach (var item in Model)
+            {
+                <div class="slider-item">
+                    @if(item.Foto != null)
+                    {
+                        <img class="image" src="data:image/jpeg;base64,@Convert.ToBase64String(item.Foto)" draggable="false" alt="@item.Categoria1" />
+                    }
+                    else
+                    {
+                        <img class="image" src="~/img/default-category.jpg" draggable="false" alt="@item.Categoria1" />
+                    }
+                    <div class="category-overlay">
+                        <h3>@item.Categoria1</h3>
+                        <a class="category-btn" asp-action="CategoriaxProducto" asp-route-id="@item.IdCategoria">Ver más</a>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</section>
+
+ @section Scripts{
+    <script src="~/js/app.js"></script>
+}

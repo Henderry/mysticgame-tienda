@@ -1,0 +1,355 @@
+@model Tienda.Application.DTOs.ProductoDTO
+
+<section class="py-5">
+    <div class="container px-4 px-lg-5 my-3">
+        <div class="row gx-4 gx-lg-5 align-items-center">
+            <div class="col-md-6">
+                @if (Model.ImagenProducto != null && Model.ImagenProducto.Count > 0)
+                {
+                    <!-- Obtener imagen principal -->
+                    var imagenPrincipal = Model.ImagenProducto.FirstOrDefault(i => i.Principal == true) ??
+                    Model.ImagenProducto.FirstOrDefault();
+
+
+                    <div class="row mt-5">
+                        <div class="col-12">
+                            <!-- Imagen principal grande -->
+                            <div class="text-center mb-3" style="height: 400px;">
+                                <img id="mainImage"
+                                     src="data:image/jpeg;base64,@Convert.ToBase64String(imagenPrincipal.Foto)"
+                                     alt="@Model.Nombre"
+                                     style="max-height: 100%; max-width: 100%; object-fit: contain;" />
+                            </div>
+
+                            <!-- Imagenes en diminuta -->
+                            <div class="d-flex flex-wrap justify-content-center gap-2">
+                                @foreach (var imagen in Model.ImagenProducto)
+                                {
+                                    <div style="width: 80px; height: 80px; cursor: pointer;">
+                                        <img src="data:image/jpeg;base64,@Convert.ToBase64String(imagen.Foto)"
+                                             alt="Miniatura"
+                                             style="width: 100%; height: 100%; object-fit: cover;"
+                                             onclick="document.getElementById('mainImage').src = this.src" />
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center mb-3" style="height: 400px;">
+                        <img src="~/img/default-product.jpg"
+                             alt="Imagen no disponible"
+                             style="max-height: 100%; max-width: 100%; object-fit: contain;" />
+                    </div>
+                }
+            </div>
+            <div class="col-md-6">
+                <h1 class="display-5 fw-bolder" style="font-size: 1.5rem;color: #DEDEDF;font-weight: bold">@Model.Nombre</h1>
+
+                @if (Model.IdCategoriaNavigation != null)
+                {
+                    <span class="badge mb-2" style="background:#00abf0; color: white">@Model.IdCategoriaNavigation.Categoria1</span>
+                }
+
+                @if (Model.Stock > 0)
+                {
+                    <span class="mb-3" style="color: #DEDEDF">En stock</span>
+                }
+                else
+                {
+                    <span class="mb-2">Agotado</span>
+                }
+                <!-- Mostrar etiquetas -->
+                <div class="mt-2">
+                    @if (ViewBag.EtiquetasDelProducto != null && ViewBag.EtiquetasDelProducto.Count > 0)
+                    {
+                        foreach (var nombreEtiqueta in ViewBag.EtiquetasDelProducto)
+                        {
+                            <span class="badge mb-2" style="background: #31887B; color: white">@nombreEtiqueta</span>
+                        }
+                    }
+                    else
+                    {
+                        <span class="text-muted">No tiene etiquetas asociadas</span>
+                    }
+                </div>
+
+                <p class="lead" style="color:#DEDEDF">@Model.Descripcion</p>
+                <div class="fs-5 mb-5">
+                    <span style="color: #DEDEDF">₡@Model.Precio?.ToString("N2")</span>
+                </div>
+                <div class="d-flex">
+                    <input class="form-control text-center me-3" id="inputQuantity" type="number" value="1" min="1" style="max-width: 3rem" />
+                    <button class="btn btn-outline-dark flex-shrink-0" type="button">
+                        <i class="bi-cart-fill me-1"></i>
+                        Añadir al carrito
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!--Crear reseña -->
+<section class="comments-section">
+    <div class="comment-form-container">
+        <div class="user-avatar">P</div>
+        <div class="comment-input-area">
+            <form asp-action="RegistrarResena" method="post" asp-antiforgery="true">
+                <input type="hidden" name="idProducto" value="@Model.IdProducto" />
+                <input type="hidden" name="IdUsuario" value="2" />
+                <input type="hidden" name="Nombre" value="Pablo Arias" />
+
+                <div class="user-info">
+                    <span class="username">Pablo Arias</span>
+                    <span class="comment-date">@DateTime.Now.ToString("dd/MM/yyyy")</span>
+                </div>
+
+                <div class="rating-container">
+                    <label style="color: #DEDEDF">Valoración:</label>
+                    <div class="star-rating">
+                        <input type="hidden" name="Valoracion" id="valoracion-input" value="0" required />
+                        <i class="bi bi-star-fill star" data-value="1"></i>
+                        <i class="bi bi-star-fill star" data-value="2"></i>
+                        <i class="bi bi-star-fill star" data-value="3"></i>
+                        <i class="bi bi-star-fill star" data-value="4"></i>
+                        <i class="bi bi-star-fill star" data-value="5"></i>
+                    </div>
+                </div>
+
+                <textarea name="Comentario" class="comment-textarea" placeholder="Agrega un comentario..." required></textarea>
+
+                <div class="comment-actions">
+                    <button type="submit" class="submit-button">Publicar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Listado de reseñas existentes -->
+    <div class="comments-list">
+        @if (Model.Resena != null && Model.Resena.Any())
+        {
+            foreach (var resena in Model.Resena.OrderByDescending(r => r.Fecha))
+            {
+                <div class="comment-item">
+                    <div class="commenter-avatar" style="background-color: #@(resena.IdUsuarioNavigation?.Nombre?.GetHashCode().ToString("X").Substring(0, 6) ?? "6a1b9a")">
+                        @resena.IdUsuarioNavigation?.Nombre?.Substring(0, 1).ToUpper()
+                    </div>
+                    <div class="comment-content">
+                        <div class="comment-header">
+                            <span class="commenter-name">@(resena.IdUsuarioNavigation?.Nombre ?? "Usuario desconocido")</span>
+                            <span class="comment-time">@resena.Fecha?.ToString("dd MMM yyyy")</span>
+                        </div>
+
+                        <div class="comment-rating">
+                            @for (int i = 1; i <= 5; i++)
+                            {
+                                <i class="bi bi-star-fill @(i <= resena.Valoracion ? "active" : "inactive")"></i>
+                            }
+                        </div>
+                        <div class="comment-text">@resena.Comentario</div>
+
+                    </div>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="no-comments">No hay reseñas aún</div>
+        }
+    </div>
+</section>
+
+@section Scripts {
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        /* Estilos modernos para la sección de comentarios */
+        .comments-section {
+            max-width: 800px;
+            margin: 2rem auto;
+            font-family: 'Roboto', sans-serif;
+        }
+
+        .comment-form-container {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 24px;
+            padding: 16px;
+            background-color: tranparent;
+            border-radius: 1px;
+        }
+
+        .user-avatar, .commenter-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #6a1b9a;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+
+        .comment-input-area {
+            flex-grow: 1;
+        }
+
+        .user-info {
+            margin-bottom: 8px;
+        }
+
+        .username {
+            font-weight: 500;
+            margin-right: 8px;
+            color: white
+        }
+
+        .comment-date {
+            color: #DEDEDF;
+            font-size: 0.9em;
+        }
+
+        .rating-container {
+            margin-bottom: 12px;
+        }
+
+            .rating-container label {
+                display: block;
+                margin-bottom: 4px;
+                font-size: 0.9em;
+                color: #606060;
+            }
+
+        .star-rating {
+            display: flex;
+            gap: 4px;
+        }
+
+            .star-rating .bi-star-fill {
+                font-size: 18px;
+                color: #ccc;
+                cursor: pointer;
+                transition: color 0.2s;
+            }
+
+                .star-rating .bi-star-fill.checked {
+                    color: gold;
+                }
+
+        .comment-textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            min-height: 80px;
+            margin-bottom: 12px;
+            resize: vertical;
+            font-family: inherit;
+        }
+
+        .comment-actions {
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .submit-button {
+            background-color: #00abf0;
+            color: white;
+            border: none;
+            padding: 5px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+            .submit-button:hover {
+                background-color: #0549a8;
+            }
+
+        .comments-list {
+            border-top: 1px solid #e0e0e0;
+            padding-top: 16px;
+        }
+
+        .comment-item {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 16px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .comment-content {
+            flex-grow: 1;
+        }
+
+        .comment-header {
+            margin-bottom: 4px;
+        }
+
+        .commenter-name {
+            font-weight: 500;
+            margin-right: 8px;
+            color: white;
+            font-weight: bold"
+        }
+
+        .comment-time {
+            color: #DEDEDF;
+            font-size: 0.85em;
+        }
+
+        .comment-rating {
+            margin: 4px 0 8px;
+        }
+
+            .comment-rating .bi-star-fill {
+                font-size: 14px;
+            }
+
+            .comment-rating .active {
+                color: #00abf0;
+            }
+
+            .comment-rating .inactive {
+                color: #ddd;
+            }
+
+        .comment-text {
+            margin-bottom: 8px;
+            line-height: 1.5;
+            color: white;
+        }
+
+        .no-comments {
+            color: #606060;
+            text-align: center;
+            padding: 16px;
+        }
+    </style>
+
+    <script>
+        // Sistema de valoración con estrellas
+        document.addEventListener('DOMContentLoaded', function () {
+            const stars = document.querySelectorAll('.star-rating .bi-star-fill');
+            const ratingInput = document.getElementById('valoracion-input');
+
+            stars.forEach(function (star, index) {
+                star.addEventListener('click', function () {
+                    // Actualizar estrellas visualmente
+                    stars.forEach((s, i) => {
+                        s.classList.toggle('checked', i <= index);
+                    });
+
+                    // Actualizar el valor oculto
+                    ratingInput.value = index + 1;
+                });
+            });
+        });
+    </script>
+}

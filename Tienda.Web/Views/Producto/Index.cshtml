@@ -1,0 +1,42 @@
+@model IEnumerable<Tienda.Application.DTOs.ProductoDTO>
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/styleProductos.css">
+}
+
+<div class="productos-container">
+    <h2 class="categoria-title">Productos</h2>
+
+    <div class="productos-grid">
+        @foreach (var producto in Model)
+        {
+            <div class="producto-card">
+                <!-- Imagen principal del producto -->
+                @{
+                    var imagenPrincipal = producto.ImagenProducto.FirstOrDefault(i => i.Principal == true) ??
+                    producto.ImagenProducto.FirstOrDefault();
+                }
+
+                @if (imagenPrincipal?.Foto != null)
+                {
+                    <img src="data:image/jpeg;base64,@Convert.ToBase64String(imagenPrincipal.Foto)"
+                         alt="@producto.Nombre" class="producto-imagen" />
+                }
+                else
+                {
+                    <img src="~/img/default-product.jpg" alt="Imagen no disponible" class="producto-imagen" />
+                }
+
+                <div class="producto-info">
+                    <h3 class="producto-nombre">@producto.Nombre</h3>
+                    <div class="producto-precio">₡@producto.Precio?.ToString("N2")</div>
+
+                    <div class="producto-acciones">
+                        <a asp-controller="Producto" asp-action="Details" asp-route-id="@producto.IdProducto"
+                           class="btn-ver-detalle">Ver detalle</a>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
