@@ -1,0 +1,21 @@
+# Visual Studio / .NET
+.vs/
+bin/
+obj/
+*.user
+*.suo
+*.rsuser
+*.userprefs
+TestResults/
+*.log
+
+# Logs de Serilog
+**/Logs/
+
+# Secretos locales
+appsettings.*.local.json
+*.env
+
+# Sistema operativo
+Thumbs.db
+.DS_Store

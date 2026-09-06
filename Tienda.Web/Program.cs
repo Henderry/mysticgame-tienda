@@ -1,8 +1,10 @@
-using Libreria.Web.Middleware;
+锘縰sing Libreria.Web.Middleware;
+using Microsoft.AspNetCore.Localization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Serilog;
 using Serilog.Events;
+using System.Globalization;
 using System.Text;
 using Tienda.Application.Profiles;
 using Tienda.Application.Services.Implementations;
@@ -10,14 +12,18 @@ using Tienda.Application.Services.Interfaces;
 using Tienda.Infraestructure.Data;
 using Tienda.Infraestructure.Repository.Implementations;
 using Tienda.Infraestructure.Repository.Interfaces;
+using Tienda.Web.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 var connString = builder.Configuration.GetConnectionString("SqlServerDataBase");
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+// Im谩genes de productos de hasta 5 MB cada una
+builder.Services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(o => o.MultipartBodyLengthLimit = 50 * 1024 * 1024);
+builder.WebHost.ConfigureKestrel(o => o.Limits.MaxRequestBodySize = 50 * 1024 * 1024);
 
-// Configurar Inyecci髇 de Dependencias (D.I.)
+// Configurar Inyecci贸n de Dependencias (D.I.)
 // Repositorios
 builder.Services.AddTransient<IRepositoryCategoria, RepositoryCategoria>();
 builder.Services.AddTransient<IRepositoryProducto, RepositoryProducto>();
@@ -26,10 +32,10 @@ builder.Services.AddTransient<IRepositoryEtiqueta, RepositoryEtiqueta>();
 builder.Services.AddTransient<IRepositoryEtiquetaProducto, RepositoryEtiquetaProducto>();
 builder.Services.AddTransient<IRepositoryResena, RepositoryResena>();
 builder.Services.AddTransient<IRepositoryUsuario, RepositoryUsuario>();
-builder.Services.AddTransient<IRepositoryPromocion, RepositoryPromoci髇>();
-builder.Services.AddTransient<IRepositoryPromocionCategoria, RepositoryPromoci髇Categoria>();
+builder.Services.AddTransient<IRepositoryPromocion, RepositoryPromoci贸n>();
+builder.Services.AddTransient<IRepositoryPromocionCategoria, RepositoryPromoci贸nCategoria>();
 builder.Services.AddTransient<IRepositoryPromocionProducto, RepositoryPromocionProducto>();
-builder.Services.AddTransient<IRepositoryTipoPromocion, RepositoryTipoPromoci髇>();
+builder.Services.AddTransient<IRepositoryTipoPromocion, RepositoryTipoPromoci贸n>();
 
 // Servicios
 builder.Services.AddTransient<IServiceCategoria, ServiceCategoria>();
@@ -43,6 +49,9 @@ builder.Services.AddTransient<IServicePromocion, ServicePromocion>();
 builder.Services.AddTransient<IServicePromocionCategoria, ServicePromocionCategoria>();
 builder.Services.AddTransient<IServicePromocionProducto, ServicePromocionProducto>();
 builder.Services.AddTransient<IServiceTipoPromocion, ServiceTipoPromocion>();
+
+// Servicios propios de la capa web
+builder.Services.AddScoped<ICatalogoOfertas, CatalogoOfertas>();
 
 // Configurar AutoMapper
 builder.Services.AddAutoMapper(config =>
@@ -72,7 +81,7 @@ builder.Services.AddDbContext<VideoGameContext>(options =>
 
 
 
-// Configuraci髇 de Serilog
+// Configuraci贸n de Serilog
 var logger = new LoggerConfiguration()
     .MinimumLevel.Override("Microsoft", LogEventLevel.Error)
     .Enrich.FromLogContext()
@@ -87,6 +96,20 @@ builder.Host.UseSerilog(logger);
 
 var app = builder.Build();
 
+// Cultura es-CR con punto decimal para los montos de los formularios
+var cultura = (CultureInfo)CultureInfo.GetCultureInfo("es-CR").Clone();
+cultura.NumberFormat.NumberDecimalSeparator = ".";
+cultura.NumberFormat.CurrencyDecimalSeparator = ".";
+CultureInfo.DefaultThreadCurrentCulture = cultura;
+CultureInfo.DefaultThreadCurrentUICulture = cultura;
+app.UseRequestLocalization(new RequestLocalizationOptions
+{
+    DefaultRequestCulture = new RequestCulture(cultura),
+    SupportedCultures = new List<CultureInfo> { cultura },
+    SupportedUICultures = new List<CultureInfo> { cultura },
+    RequestCultureProviders = new List<IRequestCultureProvider>()
+});
+
 // Configurar el pipeline de solicitudes HTTP
 if (!app.Environment.IsDevelopment())
 {
@@ -98,6 +121,7 @@ else
     app.UseMiddleware<ErrorHandlingMiddleware>();
 }
 
+app.UseStatusCodePagesWithReExecute("/no-encontrado");
 app.UseSerilogRequestLogging();
 app.UseHttpsRedirection();
 app.UseStaticFiles();
