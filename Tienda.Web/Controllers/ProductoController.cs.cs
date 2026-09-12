@@ -1,35 +1,26 @@
-﻿using Humanizer;
-using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Routing;
-using Microsoft.CodeAnalysis.Options;
-using Microsoft.CodeAnalysis.Scripting;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
-using Newtonsoft.Json.Linq;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System;
 using Tienda.Application.DTOs;
-using Tienda.Application.Services.Implementations;
 using Tienda.Application.Services.Interfaces;
-using Tienda.Infraestructure.Models;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Model;
-using static System.Collections.Specialized.BitVector32;
-using static System.Net.Mime.MediaTypeNames;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 using Tienda.Infraestructure.Data;
+using Tienda.Infraestructure.Models;
+using Tienda.Web.Models;
+using Tienda.Web.Services;
 
 namespace Tienda.Web.Controllers
 {
     public class ProductoController : Controller
     {
+        // Usuario de ejemplo para las reseñas (todavía no hay inicio de sesión)
+        private const int UsuarioDemoId = 2;
+
         private readonly IServiceEtiqueta _serviceEtiqueta;
         private readonly IServiceEtiquetaProducto _serviceProductoEtiqueta;
         private readonly IServiceResena _serviceResena;
         private readonly IServiceProducto _serviceProducto;
         private readonly IServiceCategoria _serviceCategoria;
         private readonly IServiceImagenProducto _serviceImagenProducto;
-        private readonly VideoGameContext _contex;
+        private readonly ICatalogoOfertas _catalogoOfertas;
+        private readonly VideoGameContext _context;
 
         public ProductoController(
             IServiceEtiqueta serviceEtiqueta,
@@ -38,8 +29,8 @@ namespace Tienda.Web.Controllers
             IServiceProducto serviceProducto,
             IServiceImagenProducto serviceImagenProducto,
             IServiceCategoria serviceCategoria,
-            VideoGameContext contex
-            )
+            ICatalogoOfertas catalogoOfertas,
+            VideoGameContext context)
         {
             _serviceEtiqueta = serviceEtiqueta;
             _serviceProducto = serviceProducto;
@@ -47,12 +38,22 @@ namespace Tienda.Web.Controllers
             _serviceResena = serviceResena;
             _serviceImagenProducto = serviceImagenProducto;
             _serviceCategoria = serviceCategoria;
-            _contex = contex;
+            _catalogoOfertas = catalogoOfertas;
+            _context = context;
         }
+
+        // ---------------------------------------------------------------- Catálogo
+
         public async Task<IActionResult> Index()
         {
             var productos = await _serviceProducto.ListAsync();
-            return View(productos);
+            var ofertas = await _catalogoOfertas.ObtenerOfertasAsync(productos);
+
+            ViewBag.Categorias = (await _serviceCategoria.ListAsync())
+                .OrderBy(c => c.Categoria1)
+                .ToList();
+
+            return View(ProductoCardViewModel.Crear(productos.OrderBy(p => p.Nombre), ofertas));
         }
 
         public async Task<IActionResult> Details(int id)
@@ -60,41 +61,57 @@ namespace Tienda.Web.Controllers
             var producto = await _serviceProducto.FindByIdAsync(id);
             if (producto == null) return NotFound();
 
-            await DatosViewBag(id);
+            await CargarDetalleAsync(producto);
             return View(producto);
         }
 
-        private async Task DatosViewBag(int productoId)
+        private async Task CargarDetalleAsync(ProductoDTO producto)
         {
-            // Obtener las relaciones producto etiqueta
             var relaciones = await _serviceProductoEtiqueta.ListAsync();
-
-            // Filtrar y obtener los nombres de las etiquetas del producto
             ViewBag.EtiquetasDelProducto = relaciones
-                .Where(x => x.IdProducto == productoId)
+                .Where(x => x.IdProducto == producto.IdProducto)
                 .Select(x => x.IdEtiquetaNavigation?.Etiqueta1)
                 .Where(nombre => !string.IsNullOrEmpty(nombre))
                 .ToList();
+
+            // Oferta vigente y productos relacionados de la misma categoría
+            var productos = await _serviceProducto.ListAsync();
+            var ofertas = await _catalogoOfertas.ObtenerOfertasAsync(productos);
+            ViewBag.Oferta = ofertas.TryGetValue(producto.IdProducto, out var oferta) ? oferta : null;
+            ViewBag.Relacionados = ProductoCardViewModel.Crear(
+                productos.Where(p => p.IdCategoria == producto.IdCategoria && p.IdProducto != producto.IdProducto)
+                         .Take(4),
+                ofertas);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> RegistrarResena(ResenaDTO resenaDTO)
         {
+            if (resenaDTO.Valoracion is < 1 or > 5)
+            {
+                TempData["ErrorMessage"] = "Selecciona una valoración de 1 a 5 estrellas.";
+                return RedirectToAction(nameof(Details), new { id = resenaDTO.IdProducto });
+            }
+
+            if (string.IsNullOrWhiteSpace(resenaDTO.Comentario))
+            {
+                TempData["ErrorMessage"] = "Escribe un comentario para publicar tu reseña.";
+                return RedirectToAction(nameof(Details), new { id = resenaDTO.IdProducto });
+            }
+
+            resenaDTO.IdUsuario = UsuarioDemoId;
+            resenaDTO.Comentario = resenaDTO.Comentario.Trim();
             resenaDTO.Fecha = DateTime.Now;
 
             var idResena = await _serviceResena.AddAsync(resenaDTO);
+            TempData[idResena > 0 ? "SuccessMessage" : "ErrorMessage"] =
+                idResena > 0 ? "¡Gracias por tu opinión!" : "No se pudo registrar la reseña.";
 
-            if (idResena <= 0)
-            {
-                ModelState.AddModelError("", "No se registró la reseña");
-                await DatosViewBag(resenaDTO.IdProducto);
-                return View("Details", await _serviceProducto.FindByIdAsync(resenaDTO.IdProducto));
-            }
-
-            TempData["SuccessMessage"] = "¡Gracias por tu opinión!";
-            return RedirectToAction("Details", new { id = resenaDTO.IdProducto });
+            return RedirectToAction(nameof(Details), new { id = resenaDTO.IdProducto });
         }
+
+        // ---------------------------------------------------------------- Mantenimiento
 
         [HttpGet]
         public async Task<IActionResult> Crear()
@@ -106,85 +123,66 @@ namespace Tienda.Web.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Crear(
-          ProductoDTO productoDto,
-          List<int> selectedEtiqueta,
-          List<IFormFile> imageFiles)
+            ProductoDTO productoDto,
+            List<int> selectedEtiqueta,
+            List<IFormFile> imageFiles)
         {
-            await CargarDatosViewBag();
+            ValidarImagenes(imageFiles);
 
             if (!ModelState.IsValid)
             {
+                await CargarDatosViewBag();
                 return View(productoDto);
             }
 
-            using var transaction = await _contex.Database.BeginTransactionAsync();
+            using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                //Crear producto
                 var producto = new Producto
                 {
-                    Nombre = productoDto.Nombre,
-                    Descripcion = productoDto.Descripcion,
+                    Nombre = productoDto.Nombre?.Trim(),
+                    Descripcion = productoDto.Descripcion?.Trim(),
                     Precio = productoDto.Precio,
                     Stock = productoDto.Stock,
                     IdCategoria = productoDto.IdCategoria
                 };
 
-                await _contex.Producto.AddAsync(producto);
-                await _contex.SaveChangesAsync();
-                var productoId = producto.IdProducto;
+                await _context.Producto.AddAsync(producto);
+                await _context.SaveChangesAsync();
 
-                // Asociar etiquetas
-                if (selectedEtiqueta != null && selectedEtiqueta.Any())
+                foreach (var idEtiqueta in selectedEtiqueta ?? new List<int>())
                 {
-                    foreach (var id in selectedEtiqueta)
+                    await _serviceProductoEtiqueta.AddAsync(new EtiquetaProductoDTO
                     {
-                        var relationEntity = new EtiquetaProductoDTO();
-                        relationEntity.IdProducto = productoId;
-                        relationEntity.IdEtiqueta = id;
-                        await _serviceProductoEtiqueta.AddAsync(relationEntity);
-                    }
-
+                        IdProducto = producto.IdProducto,
+                        IdEtiqueta = idEtiqueta
+                    });
                 }
 
-                // Guardar imágenes
-                if (imageFiles?.Any() == true)
+                var primera = true;
+                foreach (var archivo in imageFiles.Where(f => f.Length > 0))
                 {
-                    foreach (var file in imageFiles.Where(f => f.Length > 0))
+                    await _context.ImagenProducto.AddAsync(new ImagenProducto
                     {
-                        using var ms = new MemoryStream();
-                        await file.CopyToAsync(ms);
-
-                        await _contex.ImagenProducto.AddAsync(new ImagenProducto
-                        {
-                            IdProducto = productoId,
-                            Foto = ms.ToArray(),
-                            Principal = (file == imageFiles.First())
-                        });
-                    }
-                    await _contex.SaveChangesAsync();
+                        IdProducto = producto.IdProducto,
+                        Foto = await LeerBytesAsync(archivo),
+                        Principal = primera
+                    });
+                    primera = false;
                 }
+                await _context.SaveChangesAsync();
 
                 await transaction.CommitAsync();
-                TempData["SuccessMessage"] = "Producto creado exitosamente!";
-                return RedirectToAction("Crear");
+                TempData["SuccessMessage"] = $"Producto «{producto.Nombre}» creado correctamente.";
+                return RedirectToAction(nameof(Crear));
             }
             catch (Exception ex)
             {
                 await transaction.RollbackAsync();
                 ModelState.AddModelError("", $"Error al crear el producto: {ex.Message}");
+                await CargarDatosViewBag();
                 return View(productoDto);
             }
-        }
-
-
-
-
-        private async Task CargarDatosViewBag()
-        {
-            ViewBag.ListCategorias = await _serviceCategoria.ListAsync() ?? new List<CategoriaDTO>();
-            ViewBag.ListEtiquetas = await _serviceEtiqueta.ListAsync() ?? new List<EtiquetaDTO>();
-            ViewBag.Productos = await _serviceProducto.ListAsync() ?? new List<ProductoDTO>();
         }
 
         [HttpGet]
@@ -193,19 +191,9 @@ namespace Tienda.Web.Controllers
             var producto = await _serviceProducto.FindByIdAsync(id);
             if (producto == null) return NotFound();
 
-            await DatosEViewBag(id);
+            await CargarEtiquetasSeleccionadas(id);
             await CargarDatosViewBag();
             return View(producto);
-        }
-
-        private async Task DatosEViewBag(int productoId)
-        {
-            var relaciones = await _serviceProductoEtiqueta.ListAsync();
-
-            ViewBag.EtiquetasDelProducto = relaciones
-                .Where(x => x.IdProducto == productoId)
-                .Select(x => x.IdEtiqueta) 
-                .ToList();
         }
 
         [HttpPost]
@@ -213,99 +201,118 @@ namespace Tienda.Web.Controllers
         public async Task<ActionResult> Editar(
             ProductoDTO productoDto,
             List<int> selectedEtiquetas,
-            List<IFormFile> imageFiles
-
-            )
+            List<IFormFile> imageFiles)
         {
+            ValidarImagenes(imageFiles);
+
+            // Las imágenes actuales no viajan en el formulario: se leen de la base de datos
+            var actual = await _serviceProducto.FindByIdAsync(productoDto.IdProducto);
+            if (actual == null) return NotFound();
+            productoDto.ImagenProducto = actual.ImagenProducto;
+
             if (!ModelState.IsValid)
-            {
-                await DatosEViewBag(productoDto.IdProducto);
-                return View(productoDto);
-            }
+                return await VolverAEditar(productoDto, selectedEtiquetas);
+
             try
             {
-                // 1. Actualizar producto
                 var productoId = await _serviceProducto.UpdateAsync(productoDto);
                 if (productoId <= 0)
                 {
-                    ModelState.AddModelError("", "Error al actualizar!");
-                    return View(productoDto);
+                    ModelState.AddModelError("", "No se pudo actualizar el producto.");
+                    return await VolverAEditar(productoDto, selectedEtiquetas);
                 }
 
-                // Eliminar
-                var actuales = await _serviceProductoEtiqueta.ListAsync();
-                var etiquetasAsociadas = actuales
-                    .Where(e => e.IdProducto == productoDto.IdProducto)
+                // Reemplazar etiquetas
+                var asociadas = (await _serviceProductoEtiqueta.ListAsync())
+                    .Where(e => e.IdProducto == productoId)
                     .ToList();
-
-                foreach (var etiqueta in etiquetasAsociadas)
-                {
+                foreach (var etiqueta in asociadas)
                     await _serviceProductoEtiqueta.DeleteAsync(etiqueta);
-                }
 
-            
-                // Asociar etiquetas
-                if (selectedEtiquetas != null && selectedEtiquetas.Any())
+                foreach (var idEtiqueta in selectedEtiquetas ?? new List<int>())
                 {
-                    foreach (var id in selectedEtiquetas)
+                    await _serviceProductoEtiqueta.AddAsync(new EtiquetaProductoDTO
                     {
-                        var relationEntity = new EtiquetaProductoDTO();
-                        relationEntity.IdProducto = productoId;
-                        relationEntity.IdEtiqueta = id;
-                        await _serviceProductoEtiqueta.AddAsync(relationEntity);
-                    }
-
+                        IdProducto = productoId,
+                        IdEtiqueta = idEtiqueta
+                    });
                 }
 
-                if (imageFiles != null && imageFiles.Count > 0)
+                // Nuevas imágenes: la primera es la principal solo si el producto no tiene una
+                var hayPrincipal = actual.ImagenProducto?.Any(i => i.Principal) == true;
+                foreach (var archivo in imageFiles.Where(f => f.Length > 0))
                 {
-                   
-                    var imagenesCreadas = productoDto.ImagenProducto ?? new List<ImagenProductoDTO>();
-
-                    // Verfica existe una imagen principal
-                    bool PrimerPrincipal = imagenesCreadas.Any(i =>i.Principal);
-
-                    foreach (var imageFile in imageFiles)
+                    await _serviceImagenProducto.AddAsync(new ImagenProductoDTO
                     {
-                        using (var memoryStream = new MemoryStream())
-                        {
-                            await imageFile.CopyToAsync(memoryStream);
-
-                            // La primera imagen será principal solo si no hay ninguna principal ya
-                            bool esPrincipal = !PrimerPrincipal && imageFiles.IndexOf(imageFile) == 0;
-
-                            await _serviceImagenProducto.AddAsync(new ImagenProductoDTO
-                            {
-                                IdProducto = productoId,
-                                Foto = memoryStream.ToArray(),
-                                Principal = esPrincipal
-                            });
-
-                            // Si acabamos de asignar una principal, actualizamos la bandera
-                            if (esPrincipal) PrimerPrincipal = true;
-                        }
-                    }
+                        IdProducto = productoId,
+                        Foto = await LeerBytesAsync(archivo),
+                        Principal = !hayPrincipal
+                    });
+                    hayPrincipal = true;
                 }
 
-
-                TempData["SuccessMessage"] = "Felicidades se actualizó!";
-                return RedirectToAction("Editar", new { id = productoId });
+                TempData["SuccessMessage"] = "Cambios guardados correctamente.";
+                return RedirectToAction(nameof(Editar), new { id = productoId });
             }
             catch (Exception ex)
             {
                 ModelState.AddModelError("", $"Error al actualizar: {ex.Message}");
-                await DatosEViewBag(productoDto.IdProducto);
-                return View(productoDto);
+                return await VolverAEditar(productoDto, selectedEtiquetas);
             }
         }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteEImagen(int idProducto, int idImagen)
         {
             await _serviceImagenProducto.DeleteAsync(idImagen);
-            TempData["SuccessMessage"] = "Se eliminó una imagen!";
-            return RedirectToAction("Editar", new { id = idProducto });
+            TempData["SuccessMessage"] = "Imagen eliminada.";
+            return RedirectToAction(nameof(Editar), new { id = idProducto });
         }
 
+        // ---------------------------------------------------------------- Auxiliares
+
+        private const long TamanoMaximoImagen = 5 * 1024 * 1024;
+
+        private void ValidarImagenes(List<IFormFile>? archivos)
+        {
+            foreach (var archivo in archivos ?? new List<IFormFile>())
+            {
+                if (!archivo.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
+                    ModelState.AddModelError("", $"«{archivo.FileName}» no es una imagen.");
+                else if (archivo.Length > TamanoMaximoImagen)
+                    ModelState.AddModelError("", $"«{archivo.FileName}» supera los 5 MB.");
+            }
+        }
+
+        private static async Task<byte[]> LeerBytesAsync(IFormFile archivo)
+        {
+            using var memoria = new MemoryStream();
+            await archivo.CopyToAsync(memoria);
+            return memoria.ToArray();
+        }
+
+        private async Task<ActionResult> VolverAEditar(ProductoDTO productoDto, List<int>? etiquetas)
+        {
+            ViewBag.EtiquetasDelProducto = etiquetas ?? new List<int>();
+            await CargarDatosViewBag();
+            return View(nameof(Editar), productoDto);
+        }
+
+        private async Task CargarEtiquetasSeleccionadas(int productoId)
+        {
+            var relaciones = await _serviceProductoEtiqueta.ListAsync();
+            ViewBag.EtiquetasDelProducto = relaciones
+                .Where(x => x.IdProducto == productoId)
+                .Select(x => x.IdEtiqueta)
+                .ToList();
+        }
+
+        private async Task CargarDatosViewBag()
+        {
+            ViewBag.ListCategorias = await _serviceCategoria.ListAsync() ?? new List<CategoriaDTO>();
+            ViewBag.ListEtiquetas = await _serviceEtiqueta.ListAsync() ?? new List<EtiquetaDTO>();
+            ViewBag.Productos = await _serviceProducto.ListAsync() ?? new List<ProductoDTO>();
+        }
     }
 }

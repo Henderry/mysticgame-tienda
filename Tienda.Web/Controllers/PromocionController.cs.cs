@@ -1,8 +1,9 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Tienda.Application.DTOs;
 using Tienda.Application.Services.Interfaces;
 using Tienda.Infraestructure.Data;
 using Tienda.Infraestructure.Models;
+using Tienda.Web.Models;
 
 namespace Tienda.Web.Controllers
 {
@@ -37,61 +38,71 @@ namespace Tienda.Web.Controllers
         public async Task<IActionResult> Index()
         {
             var promociones = await _servicePromocion.ListAsync();
-            return View(promociones);
+
+            // Primero las activas, luego las próximas y al final las finalizadas
+            var ordenadas = promociones
+                .OrderBy(p => p.Estado())
+                .ThenBy(p => p.FechaFin)
+                .ToList();
+            return View(ordenadas);
         }
 
         public async Task<IActionResult> Details(int id)
         {
-            var dto = await _servicePromocion.FindByIdAsync(id);
-            if (dto == null) return NotFound();
+            var promocion = await _servicePromocion.FindByIdAsync(id);
+            if (promocion == null) return NotFound();
 
-            if (dto.IdTipoPromocion == 1)
+            var productos = await _serviceProducto.ListAsync();
+            var oferta = OfertaActiva.Desde(promocion);
+            var esPorCategoria = promocion.IdTipoPromocion != 1;
+            string alcance;
+            IEnumerable<ProductoDTO> incluidos;
+
+            if (!esPorCategoria)
             {
-                // Producto
-                var relsP = await _servicePromocionProducto.ListAsync();
-                var itemP = relsP
+                var idsProducto = (await _servicePromocionProducto.ListAsync())
                     .Where(r => r.IdPromocion == id)
-                    .Select(r => new {
-                        Producto = r.IdProductoNavigation,
-                        Imagenes = r.IdProductoNavigation?.ImagenProducto?.ToList()
-                    })
-                    .FirstOrDefault();
-                if (itemP == null) return NotFound();
-
-                ViewBag.Promocion = dto;
-                ViewBag.Producto = itemP.Producto;
-                ViewBag.Imagenes = itemP.Imagenes;
-                return View("DetailsProducto");
+                    .Select(r => r.IdProducto)
+                    .ToHashSet();
+                incluidos = productos.Where(p => idsProducto.Contains(p.IdProducto));
+                alcance = idsProducto.Count == 1 ? "Producto seleccionado" : $"{idsProducto.Count} productos seleccionados";
             }
             else
             {
-                // Categoría
-                var relsC = await _servicePromocionCategoria.ListAsync();
-                var cat = relsC
+                var categorias = (await _servicePromocionCategoria.ListAsync())
                     .Where(r => r.IdPromocion == id)
-                    .Select(r => r.IdCategoriaNavigation)
-                    .FirstOrDefault();
-                if (cat == null) return NotFound();
-
-                var lista = cat.Producto?
-                    .Select(p => new {
-                        Producto = p,
-                        ImagenPrincipal = p.ImagenProducto?.FirstOrDefault(i => i.Principal)
-                                         ?? p.ImagenProducto?.FirstOrDefault()
-                    })
                     .ToList();
-                ViewBag.Promocion = dto;
-                ViewBag.Categoria = cat;
-                ViewBag.Productos = lista;
-                return View("DetailsCategoria");
+                var idsCategoria = categorias.Select(r => r.IdCategoria).ToHashSet();
+                incluidos = productos.Where(p => idsCategoria.Contains(p.IdCategoria));
+                var nombres = categorias
+                    .Select(r => r.IdCategoriaNavigation?.Categoria1)
+                    .Where(n => !string.IsNullOrWhiteSpace(n));
+                alcance = "Categoría: " + string.Join(", ", nombres);
             }
+
+            var modelo = new PromocionDetalleViewModel
+            {
+                Promocion = promocion,
+                Alcance = alcance,
+                EsPorCategoria = esPorCategoria,
+                Productos = incluidos
+                    .OrderBy(p => p.Nombre)
+                    .Select(p => new ProductoCardViewModel { Producto = p, Oferta = oferta })
+                    .ToList()
+            };
+
+            return View("Details", modelo);
         }
 
         [HttpGet]
         public async Task<IActionResult> Crear()
         {
             await CargarDatosViewBag();
-            return View(new PromocionDTO());
+            return View(new PromocionDTO
+            {
+                FechaInicio = DateTime.Today,
+                FechaFin = DateTime.Today.AddDays(7)
+            });
         }
 
         [HttpPost]
@@ -102,8 +113,16 @@ namespace Tienda.Web.Controllers
             List<int>? selectedCategoria)
         {
             await CargarDatosViewBag();
+            // Si el formulario vuelve con errores, conserva lo que el usuario había marcado
+            ViewBag.SelectedProductos = selectedProducto ?? new List<int>();
+            ViewBag.SelectedCategorias = selectedCategoria ?? new List<int>();
 
             // Validaciones básicas
+            ValidarDescuento(dto);
+            if (dto.IdTipoPromocion == 1 && (selectedProducto is null || selectedProducto.Count == 0))
+                ModelState.AddModelError("", "Seleccione al menos un producto para la promoción.");
+            if (dto.IdTipoPromocion != 1 && (selectedCategoria is null || selectedCategoria.Count == 0))
+                ModelState.AddModelError("", "Seleccione al menos una categoría para la promoción.");
             if (dto.FechaInicio < DateTime.Today)
                 ModelState.AddModelError(nameof(dto.FechaInicio),
                     "La fecha de inicio no puede ser anterior a hoy");
@@ -162,7 +181,7 @@ namespace Tienda.Web.Controllers
                 await _contex.SaveChangesAsync();
                 await tx.CommitAsync();
 
-                TempData["SuccessMessage"] = "Promoción creada exitosamente!";
+                TempData["SuccessMessage"] = $"Promoción «{prom.Nombre}» creada correctamente.";
                 return RedirectToAction(nameof(Crear));
             }
             catch (Exception ex)
@@ -171,6 +190,13 @@ namespace Tienda.Web.Controllers
                 ModelState.AddModelError("", $"Error: {ex.Message}");
                 return View(dto);
             }
+        }
+
+        /// <summary>El descuento se guarda como fracción (0.15 = 15 %).</summary>
+        private void ValidarDescuento(PromocionDTO dto)
+        {
+            if (dto.Descuento is null or <= 0m or >= 1m)
+                ModelState.AddModelError(nameof(dto.Descuento), "El descuento debe estar entre 1 % y 99 %.");
         }
 
         private async Task CargarDatosViewBag()
@@ -225,10 +251,8 @@ namespace Tienda.Web.Controllers
             // 1) Recarga dropdowns
             await CargarDatosViewBag();
 
-            // 2) Validaciones de fechas
-            if (dto.FechaInicio < DateTime.Today)
-                ModelState.AddModelError(nameof(dto.FechaInicio),
-                    "La fecha de inicio no puede ser anterior a hoy");
+            // 2) Validaciones: una promoción ya iniciada se puede editar, solo se valida el rango
+            ValidarDescuento(dto);
             if (dto.FechaFin < dto.FechaInicio)
                 ModelState.AddModelError(nameof(dto.FechaFin),
                     "La fecha fin no puede ser anterior a la fecha de inicio");
@@ -291,7 +315,7 @@ namespace Tienda.Web.Controllers
                 }
 
                 await tx.CommitAsync();
-                TempData["SuccessMessage"] = "Promoción actualizada correctamente!";
+                TempData["SuccessMessage"] = "Cambios guardados correctamente.";
                 return RedirectToAction(nameof(Editar), new { id = dto.IdPromocion });
             }
             catch (Exception ex)
