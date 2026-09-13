@@ -1,142 +1,184 @@
-﻿<!DOCTYPE html>
-<html lang="en">
+@{
+    var controlador = ViewContext.RouteData.Values["controller"]?.ToString();
+    var accion = ViewContext.RouteData.Values["action"]?.ToString();
+    string Activo(string c, string? a = null) =>
+        string.Equals(controlador, c, StringComparison.OrdinalIgnoreCase)
+        && (a == null || string.Equals(accion, a, StringComparison.OrdinalIgnoreCase)) ? "active" : "";
+    var esMantenimiento = accion is "Crear" or "Editar";
+    var titulo = ViewData["Title"] as string;
+}
+<!DOCTYPE html>
+<html lang="es" data-bs-theme="dark">
 <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
-    <meta name="description" content="" />
-    <meta name="author" content="" />
-    <title>MysticGame</title>
-    <!-- Favicon-->
-    <link rel="icon" type="image/icono.png" href="~/MysticGame-ImageLogo.jpeg">
-    <!-- Bootstrap icons-->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.5.0/font/bootstrap-icons.css" rel="stylesheet" />
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Core theme CSS (includes Bootstrap)-->
-    <link href="~/css/styles.css" rel="stylesheet" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="MysticGame: tienda de videojuegos, consolas y accesorios con promociones por producto y categoría." />
+    <meta name="theme-color" content="#081b29" />
+    <title>@(string.IsNullOrEmpty(titulo) ? "MysticGame · Videojuegos, consolas y accesorios" : $"{titulo} · MysticGame")</title>
+    <link rel="icon" type="image/png" href="~/img/MysticGame-Logo.ico.png" />
 
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Russo+One&display=swap" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" />
+    <link href="~/css/styles.css" rel="stylesheet" asp-append-version="true" />
     @await RenderSectionAsync("Styles", required: false)
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            background-color: #081b29;
-            background-image: repeating-linear-gradient( to right, transparent 0 100px, #25283b22 100px 101px ), repeating-linear-gradient( to bottom, transparent 0 100px, #25283b22 100px 101px );
-            overflow-x: hidden;
-        }
-
-            body::before {
-                position: absolute;
-                width: min(1400px, 90vw);
-                top: 10%;
-                left: 50%;
-                height: 90%;
-                transform: translateX(-50%);
-                content: '';
-                background-size: 100%;
-                background-repeat: no-repeat;
-                background-position: top center;
-                pointer-events: none;
-                background-image: none;
-                -webkit-mask-image: url(img/bg.png);
-                mask-image: url(img/bg.png);
-                -webkit-mask-size: 100%;
-                mask-size: 100%;
-                -webkit-mask-repeat: no-repeat;
-                mask-repeat: no-repeat;
-                -webkit-mask-position: top center;
-                mask-position: top center;
-                background-color: #00abf0;
-                filter: drop-shadow(0 0 5px #00abf0) drop-shadow(0 0 15px rgba(0, 171, 240, 0.7));
-                z-index: 1; /* Asegura que esté detrás del contenido principal */
-            }
-    </style>
 </head>
-<body>
+<body class="@(controlador == "Home" && accion == "Index" ? "pagina-inicio" : "")">
+    <a class="visually-hidden-focusable salto" href="#contenido">Saltar al contenido</a>
 
-    <!-- Navigation-->
-    <nav class="navbar navbar-expand-lg navbar-light bg-light shadow-sm mb-4" style="background: transparent !important; min-height: 80px; padding-top: 0;
-    padding-bottom: 0;">
-        <div class="container px-4 px-lg-5">
-            <!-- Logo -->
-            <a class="navbar-brand d-flex align-items-center" href="@Url.Action("Index", "Home")" style="height: 90px; width: auto">
-                <img src="~/img/MysticGame-Logo.ico.png" alt="Logo" width="100" height="100" class="me-2" style="height: 120px;width: auto;" />
+    <header class="barra-superior" id="barraSuperior">
+        <nav class="navbar navbar-expand-lg" aria-label="Navegación principal">
+            <div class="container">
+                <a class="navbar-brand marca" asp-controller="Home" asp-action="Index" aria-label="MysticGame, inicio">
+                    <img src="~/img/MysticGame-Logo.ico.png" alt="" width="56" height="56" />
+                    <span class="marca-texto">Mystic<span>Game</span></span>
+                </a>
 
-            </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
-                    data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
-                    aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
+                <div class="d-flex align-items-center gap-2 order-lg-3">
+                    <button class="btn-icono position-relative" type="button" data-bs-toggle="offcanvas"
+                            data-bs-target="#carrito" aria-controls="carrito" aria-label="Abrir carrito">
+                        <i class="bi bi-bag"></i>
+                        <span class="contador-carrito" data-carrito-contador hidden>0</span>
+                    </button>
+                    <button class="navbar-toggler btn-icono" type="button" data-bs-toggle="collapse"
+                            data-bs-target="#menuPrincipal" aria-controls="menuPrincipal"
+                            aria-expanded="false" aria-label="Abrir menú">
+                        <i class="bi bi-list"></i>
+                    </button>
+                </div>
 
-            <div class="collapse navbar-collapse" id="navbarSupportedContent">
-
-                <ul class="navbar-nav me-auto mb-2 mb-lg-0 ms-lg-4">
-                    <li class="nav-item"><a class="nav-link active" aria-current="page" href="@Url.Action("Index", "Home")" style="color: white !important;">Inicio</a></li>
-                    <li class="nav-item"><a class="nav-link" href="@Url.Action("Index", "Producto")" style="color: white !important;">Productos</a></li>
-                    <li class="nav-item"><a class="nav-link" href="@Url.Action("Index", "Promocion")" style="color: white !important;">Promociones</a></li>
-
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" id="navbarDropdown" href="#" role="button"
-                           data-bs-toggle="dropdown" aria-expanded="false" style="color: white !important;">Mantenimientos</a>
-                        <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
-                            <li><a class="dropdown-item" href="@Url.Action("Crear", "Promocion")">Promociones</a></li>
-                            <li><a class="dropdown-item" href="@Url.Action("Crear", "Producto")">Productos</a></li>
-                            <li><a class="dropdown-item" href="@Url.Action("CrearResena", "Reseñas")">Reseñas</a></li>
-
-                        </ul>
-                    </li>
-                </ul>
+                <div class="collapse navbar-collapse order-lg-2" id="menuPrincipal">
+                    <ul class="navbar-nav mx-lg-auto gap-lg-1">
+                        <li class="nav-item">
+                            <a class="nav-link @Activo("Home", "Index")" asp-controller="Home" asp-action="Index">Inicio</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link @(controlador == "Producto" && !esMantenimiento || accion == "CategoriaxProducto" ? "active" : "")"
+                               asp-controller="Producto" asp-action="Index">Productos</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link @(controlador == "Promocion" && !esMantenimiento ? "active" : "")"
+                               asp-controller="Promocion" asp-action="Index">Promociones</a>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle @(esMantenimiento ? "active" : "")" href="#" role="button"
+                               data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="bi bi-sliders2 me-1"></i>Administración
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><h6 class="dropdown-header">Mantenimientos</h6></li>
+                                <li>
+                                    <a class="dropdown-item" asp-controller="Producto" asp-action="Crear">
+                                        <i class="bi bi-controller me-2"></i>Productos
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" asp-controller="Promocion" asp-action="Crear">
+                                        <i class="bi bi-percent me-2"></i>Promociones
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+                    </ul>
+                </div>
             </div>
-        </div>
-    </nav>
+        </nav>
+    </header>
 
-
-    <div class="container">
-        <main role="main">
+    <main id="contenido" role="main">
+        @if (controlador == "Home" && accion == "Index")
+        {
             @RenderBody()
-        </main>
-    </div>
+        }
+        else
+        {
+            <div class="container pagina">
+                @RenderBody()
+            </div>
+        }
+    </main>
 
-    <!-- Footer -->
-    <footer class="bg-dark text-white pt-5 pb-3 mt-5">
+    <footer class="pie">
         <div class="container">
-            <div class="row text-center text-md-start">
-
-                <div class="col-md-4 mb-4">
-                    <h5 class="fw-bold mb-3">
-                        MysticGame
-                    </h5>
+            <div class="row g-4 align-items-start">
+                <div class="col-lg-5">
+                    <a class="marca mb-3" asp-controller="Home" asp-action="Index">
+                        <img src="~/img/MysticGame-Logo.ico.png" alt="" width="48" height="48" />
+                        <span class="marca-texto">Mystic<span>Game</span></span>
+                    </a>
+                    <p class="pie-texto">Videojuegos, consolas y accesorios para todas las plataformas, con promociones que se actualizan cada semana.</p>
                 </div>
-
-                <!--Redes sociales -->
-                <div class="col-md-4 mb-4">
-                    <h6 class="text-uppercase fw-bold mb-3">Síguenos</h6>
-                    <a href="#" class="text-white me-3 fs-5"><i class="bi bi-facebook"></i></a>
-                    <a href="#" class="text-white me-3 fs-5"><i class="bi bi-instagram"></i></a>
-                    <a href="#" class="text-white me-3 fs-5"><i class="bi bi-twitter-x"></i></a>
-                    <a href="#" class="text-white fs-5"><i class="bi bi-envelope-fill"></i></a>
+                <div class="col-6 col-lg-2">
+                    <h2 class="pie-titulo">Tienda</h2>
+                    <ul class="list-unstyled pie-lista">
+                        <li><a asp-controller="Producto" asp-action="Index">Productos</a></li>
+                        <li><a asp-controller="Promocion" asp-action="Index">Promociones</a></li>
+                        <li><a href="#" data-bs-toggle="offcanvas" data-bs-target="#carrito">Mi carrito</a></li>
+                    </ul>
+                </div>
+                <div class="col-6 col-lg-2">
+                    <h2 class="pie-titulo">Administración</h2>
+                    <ul class="list-unstyled pie-lista">
+                        <li><a asp-controller="Producto" asp-action="Crear">Productos</a></li>
+                        <li><a asp-controller="Promocion" asp-action="Crear">Promociones</a></li>
+                    </ul>
+                </div>
+                <div class="col-lg-3">
+                    <h2 class="pie-titulo">Tecnología</h2>
+                    <p class="pie-texto mb-0">ASP.NET Core 8 MVC · Entity Framework Core · SQL Server · Bootstrap 5</p>
                 </div>
             </div>
-
-            <hr class="border-secondary" />
-
-            <div class="text-center small text-muted">
-                © @DateTime.Now.Year Mi Librería. Todos los derechos reservados.
+            <div class="pie-legal">
+                <span>© @DateTime.Now.Year MysticGame</span>
+                <span>Proyecto académico · Ingeniería del Software, UTN</span>
             </div>
         </div>
     </footer>
 
+    <!-- Carrito (se guarda en el navegador) -->
+    <div class="offcanvas offcanvas-end carrito" tabindex="-1" id="carrito" aria-labelledby="carritoTitulo">
+        <div class="offcanvas-header">
+            <h2 class="offcanvas-title" id="carritoTitulo"><i class="bi bi-bag me-2"></i>Tu carrito</h2>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Cerrar"></button>
+        </div>
+        <div class="offcanvas-body">
+            <div data-carrito-lista></div>
+            <div class="carrito-vacio" data-carrito-vacio>
+                <i class="bi bi-controller"></i>
+                <p>Tu carrito está vacío.</p>
+                <a class="btn btn-neon btn-sm" asp-controller="Producto" asp-action="Index">Explorar productos</a>
+            </div>
+        </div>
+        <div class="offcanvas-footer" data-carrito-resumen hidden>
+            <div class="d-flex justify-content-between align-items-baseline mb-3">
+                <span class="text-secondary">Total</span>
+                <strong class="carrito-total" data-carrito-total>₡0</strong>
+            </div>
+            <button class="btn btn-neon w-100" type="button" data-carrito-pagar>Finalizar compra</button>
+            <button class="btn btn-link btn-sm w-100 text-secondary mt-1" type="button" data-carrito-vaciar>Vaciar carrito</button>
+        </div>
+    </div>
 
-    <!-- Bootstrap core JS-->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
-    <!-- Core theme JS-->
-    <script src="~/js/scripts.js"></script>
+    <!-- Notificaciones -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3" id="notificaciones">
+        @if (TempData["SuccessMessage"] is string exito)
+        {
+            <div class="toast aviso aviso-exito" role="status" aria-live="polite" data-bs-delay="5000" data-mostrar>
+                <div class="toast-body"><i class="bi bi-check-circle-fill"></i><span>@exito</span></div>
+            </div>
+        }
+        @if (TempData["ErrorMessage"] is string fallo)
+        {
+            <div class="toast aviso aviso-error" role="alert" aria-live="assertive" data-bs-delay="7000" data-mostrar>
+                <div class="toast-body"><i class="bi bi-exclamation-triangle-fill"></i><span>@fallo</span></div>
+            </div>
+        }
+    </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/scripts.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

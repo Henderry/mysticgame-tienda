@@ -1,23 +1,25 @@
-﻿@{
-    ViewData["Title"] = "Error";
-}
 @{
-    if (@ViewBag.ErrorMessages != null)
-    {
-        
-        <div class="card">
-            <div class="card-header ">
-                 Se ha presentado un Error 
-            </div>
-            <div class="card-body">
-                <h5>Event Id: @ViewBag.ErrorMessages.IdEvent</h5>
-                @foreach (var item in @ViewBag.ErrorMessages.ListMessages)
-                {
-                    <p class="card-text">@item</p>
-                }
-                <button onclick="window.history.back()" class="btn btn-primary">Regresar</button>
-            </div>
-        </div>
-    }
+    ViewData["Title"] = "Ocurrió un error";
+    var error = ViewBag.ErrorMessages as Libreria.Web.Models.ErrorMiddlewareViewModel;
 }
-
+<section class="pagina-error">
+    <div class="panel text-center mx-auto" style="max-width: 640px">
+        <i class="bi bi-bug icono-error"></i>
+        <h1>Algo salió mal</h1>
+        <p class="text-secondary">No pudimos completar la operación. Si el problema continúa, comparte el código del evento con el equipo de soporte.</p>
+        @if (error != null)
+        {
+            <div class="detalle-error">
+                <div><span>Código del evento</span><code>@error.IdEvent</code></div>
+                @foreach (var mensaje in error.ListMessages ?? new List<string>())
+                {
+                    <p>@mensaje</p>
+                }
+            </div>
+        }
+        <div class="d-flex justify-content-center gap-2 mt-4">
+            <button type="button" onclick="history.back()" class="btn btn-contorno"><i class="bi bi-arrow-left me-1"></i>Regresar</button>
+            <a class="btn btn-neon" asp-controller="Home" asp-action="Index">Ir al inicio</a>
+        </div>
+    </div>
+</section>
