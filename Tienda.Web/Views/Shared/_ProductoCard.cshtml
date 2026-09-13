@@ -1,0 +1,67 @@
+@model Tienda.Web.Models.ProductoCardViewModel
+@using Tienda.Web.Util
+@{
+    var p = Model.Producto;
+    var imagen = Model.ImagenPrincipal;
+    var agotado = p.Stock <= 0;
+    var promedio = Model.PromedioValoracion;
+}
+<article class="producto-card @(Model.Oferta != null ? "en-oferta" : "")"
+         data-nombre="@(p.Nombre?.ToLowerInvariant() ?? string.Empty)"
+         data-categoria="@p.IdCategoria"
+         data-precio="@Model.PrecioFinal.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+         data-oferta="@(Model.Oferta != null ? "1" : "0")">
+    <a class="producto-imagen" asp-controller="Producto" asp-action="Details" asp-route-id="@p.IdProducto" tabindex="-1" aria-hidden="true">
+        @if (imagen?.Foto != null)
+        {
+            <img src="@Formato.Base64(imagen.Foto)" alt="@p.Nombre" loading="lazy" />
+        }
+        else
+        {
+            <span class="sin-imagen"><i class="bi bi-controller"></i></span>
+        }
+        <span class="producto-insignias">
+            @if (Model.Oferta != null)
+            {
+                <span class="chip chip-oferta">-@Model.Oferta.Porcentaje%</span>
+            }
+            @if (agotado)
+            {
+                <span class="chip chip-apagado">Agotado</span>
+            }
+        </span>
+    </a>
+    <div class="producto-info">
+        @if (p.IdCategoriaNavigation != null)
+        {
+            <span class="producto-categoria">@p.IdCategoriaNavigation.Categoria1</span>
+        }
+        <h3 class="producto-nombre">
+            <a asp-controller="Producto" asp-action="Details" asp-route-id="@p.IdProducto">@p.Nombre</a>
+        </h3>
+        @if (promedio != null)
+        {
+            <div class="producto-valoracion" aria-label="Valoración @promedio.Value.ToString("0.0") de 5">
+                <i class="bi bi-star-fill"></i> @promedio.Value.ToString("0.0")
+                <span>(@Model.CantidadValoraciones)</span>
+            </div>
+        }
+        <div class="producto-pie">
+            <div class="producto-precio">
+                @if (Model.Oferta != null)
+                {
+                    <del>@Formato.Colones(Model.PrecioBase)</del>
+                }
+                <strong>@Formato.Colones(Model.PrecioFinal)</strong>
+            </div>
+            <button type="button" class="btn-agregar" aria-label="Agregar @p.Nombre al carrito"
+                    data-agregar-carrito
+                    data-id="@p.IdProducto"
+                    data-nombre="@p.Nombre"
+                    data-precio="@Model.PrecioFinal.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+                    @(agotado ? "disabled" : "")>
+                <i class="bi bi-bag-plus"></i>
+            </button>
+        </div>
+    </div>
+</article>

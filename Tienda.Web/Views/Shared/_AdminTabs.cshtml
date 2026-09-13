@@ -1,0 +1,7 @@
+@{
+    var controlador = ViewContext.RouteData.Values["controller"]?.ToString();
+}
+<nav class="admin-tabs" aria-label="Secciones de administración">
+    <a class="@(controlador == "Producto" ? "activo" : "")" asp-controller="Producto" asp-action="Crear"><i class="bi bi-controller"></i>Productos</a>
+    <a class="@(controlador == "Promocion" ? "activo" : "")" asp-controller="Promocion" asp-action="Crear"><i class="bi bi-percent"></i>Promociones</a>
+</nav>
