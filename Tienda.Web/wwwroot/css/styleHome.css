@@ -1,271 +1,153 @@
 @import url('https://fonts.cdnfonts.com/css/ica-rubrik-black');
-@import url('https://fonts.cdnfonts.com/css/poppins');
+/* ==========================================================================
+   Inicio: portada con carrusel 3D, categorías, ofertas y novedades
+   ========================================================================== */
 
-.banner {
-    width: 100%;
-    height: 110vh;
-    display: flex;
-    flex-direction: column;
+/* ---------------------------------------------------------------- Portada */
+.hero {
     position: relative;
+    min-height: calc(100vh - 72px);
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    justify-items: center;
+    padding: 2.5rem 0 3rem;
     overflow: hidden;
-    margin-top: 50px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+    isolation: isolate;
 }
 
-    .banner .header {
-        font-family: 'ICA Rubrik', sans-serif;
-        font-size: 5em;
-        font-weight: 700;
-        color: #00abf0;
-        text-align: center;
-        margin: 10px;
-        z-index: 3;
-        position: relative;
-       
-    }
-        .banner .header h1 {
-            color: white;
-           
-        }
-
-
-        .banner .slider {
-            width: 200px;
-            height: 250px;
-            position: absolute;
-            top: 38%;
-            left: 50%;
-            transform: translate(-50%, -50%) perspective(1000px) scale(0.9);
-            transform-style: preserve-3d;
-            animation: autoRun 20s linear infinite;
-            z-index: 2;
-        }
-
-
-@keyframes autoRun {
-    from {
-        transform: translate(-50%, -50%) perspective(1000px) rotateX(-16deg) rotateY(0deg) scale(0.9);
-    }
-
-    to {
-        transform: translate(-50%, -50%) perspective(1000px) rotateX(-16deg) rotateY(360deg) scale(0.9);
-    }
+/* Marco neón decorativo (rayas y destellos) */
+.hero-marco {
+    position: absolute;
+    inset: 1.5rem 50% auto;
+    width: min(1400px, 92vw);
+    height: 88%;
+    transform: translateX(-50%);
+    background: var(--mg-neon);
+    -webkit-mask: url('../img/bg.png') top center / 100% auto no-repeat;
+    mask: url('../img/bg.png') top center / 100% auto no-repeat;
+    filter: drop-shadow(0 0 6px var(--mg-neon)) drop-shadow(0 0 18px rgba(0, 171, 240, .6));
+    opacity: .9;
+    z-index: -1;
+    pointer-events: none;
 }
 
-.banner .slider .item {
+.hero::after {
+    content: '';
+    position: absolute;
+    left: 50%; top: 55%;
+    width: 70vw; height: 50vh;
+    transform: translate(-50%, -50%);
+    background: radial-gradient(closest-side, rgba(0, 171, 240, .22), transparent 70%);
+    z-index: -2;
+    pointer-events: none;
+}
+
+.hero-contenido { text-align: center; position: relative; z-index: 3; }
+.hero-contenido .antetitulo::before { display: none; }
+.hero-titulo {
+    font-family: 'ICA Rubrik', var(--mg-titulo);
+    font-size: clamp(3rem, 9vw, 6.5rem);
+    line-height: .95;
+    margin: 0;
+    letter-spacing: .02em;
+    color: #fff;
+    text-shadow: 0 0 30px rgba(0, 171, 240, .35);
+}
+.hero-titulo span {
+    background: linear-gradient(180deg, #7fdcff, var(--mg-neon));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+
+/* Carrusel 3D de portadas */
+.carrusel {
+    --ancho: clamp(110px, 11vw, 170px);
+    --radio: clamp(220px, 22vw, 340px);
+    position: relative;
+    width: var(--ancho);
+    aspect-ratio: 4 / 5;
+    align-self: center;
+    /* Las portadas delanteras se proyectan hacia abajo por la perspectiva:
+       el margen inferior reserva ese espacio para que no tapen el texto. */
+    margin: clamp(2rem, 5vh, 3.5rem) 0 calc(var(--ancho) * 1.05);
+    transform-style: preserve-3d;
+    transform: perspective(1100px) rotateX(-14deg);
+    animation: girar 28s linear infinite;
+    z-index: 2;
+}
+.carrusel:hover { animation-play-state: paused; }
+
+@keyframes girar {
+    from { transform: perspective(1100px) rotateX(-14deg) rotateY(0deg); }
+    to { transform: perspective(1100px) rotateX(-14deg) rotateY(360deg); }
+}
+
+.carrusel-item {
     position: absolute;
     inset: 0;
-    transform: rotateY(calc((var(--position) - 1) * (360 / var(--quantity)) * 1deg)) translateZ(350px);
-    padding: 8px;
-    
-    box-shadow: 0 0 10px #00abf0;
+    transform: rotateY(calc((var(--posicion) - 1) * (360deg / var(--cantidad)))) translateZ(var(--radio));
+    border-radius: 12px;
+    padding: 6px;
+    background: rgba(0, 171, 240, .08);
+    box-shadow: 0 0 0 1px rgba(0, 171, 240, .6), 0 0 18px rgba(0, 171, 240, .45);
+}
+.carrusel-item img { width: 100%; height: 100%; object-fit: cover; border-radius: 8px; }
+
+.hero-pie { text-align: center; position: relative; z-index: 3; }
+.hero-pie p { max-width: 36rem; margin: 0 auto 1.5rem; color: #b9c7d3; font-size: 1.05rem; }
+.hero-datos { display: flex; justify-content: center; gap: clamp(1.5rem, 5vw, 3.5rem); margin: 2rem 0 0; }
+.hero-datos div { text-align: center; }
+.hero-datos dt { font-family: var(--mg-titulo); font-size: 1.8rem; color: #fff; font-weight: 400; line-height: 1; }
+.hero-datos dd { margin: .3rem 0 0; font-size: .78rem; letter-spacing: .12em; text-transform: uppercase; color: var(--mg-texto-suave); }
+
+@media (max-width: 767.98px) {
+    .hero { min-height: auto; padding-top: 2rem; }
+    .carrusel { --ancho: 100px; --radio: 180px; margin: 2.5rem 0 calc(var(--ancho) * 1.1); }
+    .hero-marco { height: 60%; }
 }
 
-    .banner .slider .item img {
-        width: 100%;
-        height: 100%;
-        object-fit: contain;
-        border-radius: 8px;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.4);
-    }
+/* ---------------------------------------------------------------- Secciones */
+.seccion { padding: clamp(3rem, 7vw, 5rem) 0 0; position: relative; }
+.seccion-ofertas .antetitulo-oferta { color: #ff7a86; }
 
-
-.banner .author-info {
-    text-align: center;
-    padding: 30px 0;
-    z-index: 3;
-    position: relative;
-    
-    margin-top: auto; 
+/* Categorías */
+.categorias-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.25rem; }
+.categoria-card {
+    position: relative; display: block;
+    aspect-ratio: 4 / 5;
+    border-radius: 20px; overflow: hidden;
+    border: 1px solid var(--mg-borde);
+    background: var(--mg-superficie);
+    isolation: isolate;
+    transition: transform .35s ease, box-shadow .35s ease, border-color .35s ease;
 }
-
-.banner .author {
-    font-family: 'Poppins', sans-serif;
-    color: white;
-    max-width: 600px;
-    margin: 0 auto;
-    padding: 0 20px;
+.categoria-card img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform .6s ease; z-index: -2; }
+.categoria-velo { position: absolute; inset: 0; background: linear-gradient(180deg, transparent 35%, rgba(4, 14, 22, .92)); z-index: -1; }
+.categoria-texto { position: absolute; left: 1.25rem; right: 3.5rem; bottom: 1.25rem; display: flex; flex-direction: column; }
+.categoria-texto strong { font-family: var(--mg-titulo); font-size: 1.35rem; color: #fff; font-weight: 400; }
+.categoria-texto small { color: #9ee3ff; font-size: .82rem; }
+.categoria-flecha {
+    position: absolute; right: 1rem; bottom: 1.25rem;
+    width: 40px; height: 40px; border-radius: 50%;
+    display: grid; place-items: center;
+    background: rgba(0, 171, 240, .18); color: #fff; border: 1px solid rgba(0, 171, 240, .5);
+    transition: background .3s, transform .3s;
 }
+.categoria-card:hover { transform: translateY(-6px); border-color: var(--mg-neon); box-shadow: 0 24px 50px -24px rgba(0, 171, 240, .8); }
+.categoria-card:hover img { transform: scale(1.07); }
+.categoria-card:hover .categoria-flecha { background: var(--mg-neon); color: #04121c; transform: rotate(45deg); }
 
-    .banner .author h2 {
-        font-size: 1.8em;
-       
-    }
-
-    .banner .author p {
-        margin: 8px 0;
-    }
-
-/* Responsive Design */
-@media screen and (max-width: 1200px) {
-    .banner .game-title {
-        font-size: 4em;
-    }
-
-    .banner .slider {
-        transform: perspective(1000px) scale(0.8);
-    }
+/* Llamado final */
+.cta {
+    display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1.5rem;
+    padding: clamp(2rem, 5vw, 3.25rem);
+    border-radius: 24px;
+    background:
+        radial-gradient(600px 240px at 90% 0%, rgba(0, 171, 240, .35), transparent 70%),
+        linear-gradient(135deg, #0f3450, #0b2233);
+    border: 1px solid var(--mg-borde);
+    margin-bottom: 1rem;
 }
-
-@media screen and (max-width: 1023px) {
-    .banner {
-        height: 90vh;
-    }
-
-        .banner .game-title {
-            font-size: 3.5em;
-            margin: 15px 0;
-        }
-
-        .banner .slider {
-            width: 180px;
-            height: 220px;
-        }
-
-            .banner .slider .item {
-                transform: rotateY(calc((var(--position) - 1) * (360 / var(--quantity)) * 1deg)) translateZ(300px);
-            }
-
-        .banner .author h2 {
-            font-size: 1.6em;
-        }
-}
-
-@media screen and (max-width: 767px) {
-    .banner {
-        height: 85vh;
-    }
-
-        .banner .game-title {
-            font-size: 3em;
-        }
-
-        .banner .slider {
-            width: 150px;
-            height: 180px;
-        }
-
-            .banner .slider .item {
-                transform: rotateY(calc((var(--position) - 1) * (360 / var(--quantity)) * 1deg)) translateZ(250px);
-            }
-
-        .banner .author-info {
-            padding: 20px 0;
-        }
-
-        .banner .author h2 {
-            font-size: 1.4em;
-        }
-}
-
-@media screen and (max-width: 500px) {
-    .banner {
-        height: 80vh;
-        padding: 15px 0;
-    }
-
-        .banner .game-title {
-            font-size: 2.5em;
-        }
-
-        .banner .slider {
-            width: 120px;
-            height: 150px;
-            transform: perspective(1000px) scale(0.7);
-        }
-
-            .banner .slider .item {
-                transform: rotateY(calc((var(--position) - 1) * (360 / var(--quantity)) * 1deg)) translateZ(200px);
-            }
-
-        .banner .author {
-            font-size: 0.9em;
-        }
-
-
-    /* Cards de categor�a */
-    .category-card {
-        background: rgba(255, 255, 255, 0.05);
-        border-radius: 10px;
-        overflow: hidden;
-        transition: all 0.3s ease;
-        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-        position: relative;
-        height: 350px;
-    }
-
-        .category-card:hover {
-            transform: translateY(-10px);
-            box-shadow: 0 15px 30px rgba(0, 171, 240, 0.4);
-        }
-
-        .category-card img {
-            width: 100%;
-            height: 70%;
-            object-fit: cover;
-            transition: all 0.5s ease;
-        }
-
-        .category-card:hover img {
-            height: 60%;
-        }
-
-    .card-content {
-        padding: 20px;
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        background: rgba(8, 27, 41, 0.9);
-        transition: all 0.3s ease;
-    }
-
-    .category-card:hover .card-content {
-        background: rgba(0, 171, 240, 0.2);
-    }
-
-    .card-content h3 {
-        color: white;
-        font-size: 1.3rem;
-        margin-bottom: 10px;
-        font-family: 'Poppins', sans-serif;
-    }
-
-    .btn-explore {
-        display: inline-block;
-        padding: 8px 20px;
-        background: #00abf0;
-        color: white;
-        text-decoration: none;
-        border-radius: 5px;
-        font-weight: 500;
-        transition: all 0.3s ease;
-    }
-
-        .btn-explore:hover {
-            background: #0088cc;
-            transform: translateX(5px);
-        }
-
-    /* Responsive */
-    @media (max-width: 768px) {
-        .categories-grid {
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-        }
-
-        .category-card {
-            height: 300px;
-        }
-    }
-
-    @media (max-width: 576px) {
-        .categories-grid {
-            grid-template-columns: 1fr;
-        }
-
-        .section-header h2 {
-            font-size: 2rem;
-        }
-    }
+.cta h2 { font-family: var(--mg-titulo); font-size: clamp(1.5rem, 3vw, 2.1rem); margin: 0 0 .35rem; }
+.cta p { margin: 0; color: #b9c7d3; }

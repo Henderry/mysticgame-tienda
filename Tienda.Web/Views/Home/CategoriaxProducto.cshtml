@@ -1,42 +1,41 @@
-﻿@model Tienda.Application.DTOs.CategoriaDTO
-
+@model List<Tienda.Web.Models.ProductoCardViewModel>
+@using Tienda.Web.Util
+@{
+    var categoria = (Tienda.Application.DTOs.CategoriaDTO)ViewBag.Categoria;
+    ViewData["Title"] = categoria.Categoria1;
+}
 @section Styles {
-    <link rel="stylesheet" href="~/css/styleProductos.css">
+    <link rel="stylesheet" href="~/css/styleProductos.css" asp-append-version="true" />
 }
 
-<div class="productos-container">
-    <h2 class="categoria-title">@Model.Categoria1</h2>
+<nav class="migas" aria-label="Ruta">
+    <a asp-controller="Home" asp-action="Index">Inicio</a><i class="bi bi-chevron-right"></i>
+    <a asp-controller="Producto" asp-action="Index">Productos</a><i class="bi bi-chevron-right"></i>
+    <span>@categoria.Categoria1</span>
+</nav>
 
+<header class="cabecera-categoria">
+    @if (categoria.Foto != null)
+    {
+        <img src="@Formato.Base64(categoria.Foto)" alt="" />
+    }
+    <div>
+        <span class="antetitulo">Categoría</span>
+        <h1>@categoria.Categoria1</h1>
+        <p>@Model.Count @(Model.Count == 1 ? "producto disponible" : "productos disponibles")</p>
+    </div>
+</header>
+
+@if (Model.Any())
+{
     <div class="productos-grid">
-        @foreach (var producto in Model.Producto)
+        @foreach (var tarjeta in Model)
         {
-            <div class="producto-card">
-                <!-- Imagen principal del producto -->
-                @{
-                    var imagenPrincipal = producto.ImagenProducto.FirstOrDefault(i => i.Principal == true) ??
-                    producto.ImagenProducto.FirstOrDefault();
-                }
-
-                @if (imagenPrincipal?.Foto != null)
-                {
-                    <img src="data:image/jpeg;base64,@Convert.ToBase64String(imagenPrincipal.Foto)"
-                         alt="@producto.Nombre" class="producto-imagen" />
-                }
-                else
-                {
-                    <img src="~/img/default-product.jpg" alt="Imagen no disponible" class="producto-imagen" />
-                }
-
-                <div class="producto-info">
-                    <h3 class="producto-nombre">@producto.Nombre</h3>
-                    <div class="producto-precio">₡@producto.Precio?.ToString("N2")</div>
-
-                    <div class="producto-acciones">
-                        <a asp-controller="Producto" asp-action="Details" asp-route-id="@producto.IdProducto"
-                           class="btn-ver-detalle">Ver detalle</a>
-                    </div>
-                </div>
-            </div>
+            <partial name="_ProductoCard" model="tarjeta" />
         }
     </div>
-</div>
+}
+else
+{
+    <div class="vacio"><i class="bi bi-box-seam"></i>Esta categoría todavía no tiene productos.</div>
+}
