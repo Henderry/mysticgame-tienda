@@ -1,0 +1,14 @@
+@{
+    ViewData["Title"] = "Página no encontrada";
+}
+<section class="pagina-error">
+    <div class="panel text-center mx-auto" style="max-width: 640px">
+        <span class="codigo-404">404</span>
+        <h1>Game over… esta página no existe</h1>
+        <p class="text-secondary">Puede que el producto o la promoción ya no esté disponible, o que la dirección tenga un error.</p>
+        <div class="d-flex justify-content-center flex-wrap gap-2 mt-4">
+            <a class="btn btn-contorno" asp-controller="Producto" asp-action="Index">Ver productos</a>
+            <a class="btn btn-neon" asp-controller="Home" asp-action="Index">Ir al inicio</a>
+        </div>
+    </div>
+</section>

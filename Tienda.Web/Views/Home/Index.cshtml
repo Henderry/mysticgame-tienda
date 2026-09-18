@@ -1,64 +1,153 @@
-﻿@model IEnumerable<Tienda.Application.DTOs.CategoriaDTO>
-
-@section Styles{
-    <link rel="stylesheet" href="~/css/styleHome.css">
-    <link rel="stylesheet" href="~/css/styleCategoria.css">
+@model Tienda.Web.Models.HomeViewModel
+@using Tienda.Web.Models
+@using Tienda.Web.Util
+@{
+    ViewData["Title"] = null;
+    var portadas = new[] { 1, 2, 3, 4, 5, 6, 7, 8, 11, 10 };
+}
+@section Styles {
+    <link rel="stylesheet" href="~/css/styleHome.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/styleProductos.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/stylePromocion.css" asp-append-version="true" />
 }
 
-<div class="banner">
-   
-    <div class="header">
-        <h1>Game</h1>
+<!-- Portada con carrusel 3D -->
+<section class="hero" aria-label="Portada">
+    <div class="hero-marco" aria-hidden="true"></div>
+    <div class="container hero-contenido">
+        <span class="antetitulo">Videojuegos · Consolas · Accesorios</span>
+        <h1 class="hero-titulo">Mystic<span>Game</span></h1>
     </div>
-    
-        <div class="slider" style="--quantity: 10">
-        <div class="item" style="--position: 1"><img src="~/img/1.jpg" alt=""></div>
-        <div class="item" style="--position: 2"><img src="~/img/2.jpg" alt=""></div>
-        <div class="item" style="--position: 3"><img src="~/img/3.jpg" alt=""></div>
-        <div class="item" style="--position: 4"><img src="~/img/4.jpg" alt=""></div>
-        <div class="item" style="--position: 5"><img src="~/img/5.jpg" alt=""></div>
-        <div class="item" style="--position: 6"><img src="~/img/6.jpg" alt=""></div>
-        <div class="item" style="--position: 7"><img src="~/img/7.jpg" alt=""></div>
-        <div class="item" style="--position: 8"><img src="~/img/8.jpg" alt=""></div>
-        <div class="item" style="--position: 9"><img src="~/img/11.jpg" alt=""></div>
-        <div class="item" style="--position: 10"><img src="~/img/10.jpg" alt=""></div>
-        </div>
-    
-    
-    <div class="author-info">
-        <div class="author">
-            <h2>MysticGame</h2>
-           
-            <p>Navega y Encuetra productos maravillosos como: video juegos, consolas, controles y mucho más.</p>
-        </div>
-    </div>
-</div>
 
-<section class="categories-slider-section">
-    <h2 style="font-family:'Poppins', sans-serif; font-size: 1.3rem; color: white; text-transform: uppercase;">Categorías</h2>
-    <div class="container" style="padding: 10rem;">
-        <div id="image-track" data-mouse-down-at="0" data-prev-percentage="0" style="margin-top: 50px;">
-            @foreach (var item in Model)
+    <div class="carrusel" style="--cantidad: @portadas.Length" aria-hidden="true">
+        @for (var i = 0; i < portadas.Length; i++)
+        {
+            <div class="carrusel-item" style="--posicion: @(i + 1)">
+                <img src="@Url.Content($"~/img/{portadas[i]}.jpg")" alt="" />
+            </div>
+        }
+    </div>
+
+    <div class="container hero-pie">
+        <p>Encuentra tu próximo juego favorito, la consola que te falta y los controles para jugar como profesional.</p>
+        <div class="d-flex flex-wrap justify-content-center gap-2">
+            <a class="btn btn-neon btn-lg" asp-controller="Producto" asp-action="Index"><i class="bi bi-controller me-2"></i>Explorar productos</a>
+            <a class="btn btn-contorno btn-lg" asp-controller="Promocion" asp-action="Index"><i class="bi bi-lightning-charge me-2"></i>Ver promociones</a>
+        </div>
+        <dl class="hero-datos">
+            <div><dt>@Model.TotalProductos</dt><dd>productos</dd></div>
+            <div><dt>@Model.Categorias.Count</dt><dd>categorías</dd></div>
+            <div><dt>@Model.Promociones.Count</dt><dd>promociones activas</dd></div>
+        </dl>
+    </div>
+</section>
+
+<!-- Categorías -->
+<section class="seccion" aria-labelledby="tituloCategorias">
+    <div class="container">
+        <div class="titulo-seccion revelar">
+            <div>
+                <span class="antetitulo">Explora</span>
+                <h2 id="tituloCategorias">Categorías</h2>
+            </div>
+            <a class="enlace-flecha" asp-controller="Producto" asp-action="Index">Todo el catálogo <i class="bi bi-arrow-right"></i></a>
+        </div>
+        <div class="categorias-grid">
+            @foreach (var categoria in Model.Categorias)
             {
-                <div class="slider-item">
-                    @if(item.Foto != null)
+                <a class="categoria-card revelar" asp-action="CategoriaxProducto" asp-route-id="@categoria.IdCategoria">
+                    @if (categoria.Foto != null)
                     {
-                        <img class="image" src="data:image/jpeg;base64,@Convert.ToBase64String(item.Foto)" draggable="false" alt="@item.Categoria1" />
+                        <img src="@Formato.Base64(categoria.Foto)" alt="" loading="lazy" />
                     }
                     else
                     {
-                        <img class="image" src="~/img/default-category.jpg" draggable="false" alt="@item.Categoria1" />
+                        <span class="sin-imagen"><i class="bi bi-grid"></i></span>
                     }
-                    <div class="category-overlay">
-                        <h3>@item.Categoria1</h3>
-                        <a class="category-btn" asp-action="CategoriaxProducto" asp-route-id="@item.IdCategoria">Ver más</a>
-                    </div>
-                </div>
+                    <span class="categoria-velo"></span>
+                    <span class="categoria-texto">
+                        <strong>@categoria.Categoria1</strong>
+                        <small>@categoria.Producto.Count @(categoria.Producto.Count == 1 ? "producto" : "productos")</small>
+                    </span>
+                    <span class="categoria-flecha"><i class="bi bi-arrow-up-right"></i></span>
+                </a>
             }
         </div>
     </div>
 </section>
 
- @section Scripts{
-    <script src="~/js/app.js"></script>
+@if (Model.Ofertas.Any())
+{
+    <!-- Ofertas -->
+    <section class="seccion seccion-ofertas" aria-labelledby="tituloOfertas">
+        <div class="container">
+            <div class="titulo-seccion revelar">
+                <div>
+                    <span class="antetitulo antetitulo-oferta">Por tiempo limitado</span>
+                    <h2 id="tituloOfertas">Ofertas de la semana</h2>
+                </div>
+                <a class="enlace-flecha" asp-controller="Producto" asp-action="Index" asp-route-ofertas="1">Ver todas <i class="bi bi-arrow-right"></i></a>
+            </div>
+            <div class="productos-grid">
+                @foreach (var tarjeta in Model.Ofertas)
+                {
+                    <partial name="_ProductoCard" model="tarjeta" />
+                }
+            </div>
+        </div>
+    </section>
 }
+
+<!-- Novedades -->
+<section class="seccion" aria-labelledby="tituloNovedades">
+    <div class="container">
+        <div class="titulo-seccion revelar">
+            <div>
+                <span class="antetitulo">Recién llegados</span>
+                <h2 id="tituloNovedades">Novedades</h2>
+            </div>
+            <a class="enlace-flecha" asp-controller="Producto" asp-action="Index">Ver catálogo <i class="bi bi-arrow-right"></i></a>
+        </div>
+        <div class="productos-grid">
+            @foreach (var tarjeta in Model.Novedades)
+            {
+                <partial name="_ProductoCard" model="tarjeta" />
+            }
+        </div>
+    </div>
+</section>
+
+@if (Model.Promociones.Any())
+{
+    <!-- Promociones activas -->
+    <section class="seccion" aria-labelledby="tituloPromos">
+        <div class="container">
+            <div class="titulo-seccion revelar">
+                <div>
+                    <span class="antetitulo">Aprovecha</span>
+                    <h2 id="tituloPromos">Promociones activas</h2>
+                </div>
+                <a class="enlace-flecha" asp-controller="Promocion" asp-action="Index">Todas las promociones <i class="bi bi-arrow-right"></i></a>
+            </div>
+            <div class="promos-grid">
+                @foreach (var promo in Model.Promociones)
+                {
+                    <partial name="_PromocionCard" model="promo" />
+                }
+            </div>
+        </div>
+    </section>
+}
+
+<!-- Llamado final -->
+<section class="seccion pb-5">
+    <div class="container">
+        <div class="cta revelar">
+            <div>
+                <h2>¿Buscas algo en especial?</h2>
+                <p>Usa el buscador del catálogo y filtra por categoría, precio u ofertas.</p>
+            </div>
+            <a class="btn btn-neon btn-lg" asp-controller="Producto" asp-action="Index"><i class="bi bi-search me-2"></i>Buscar productos</a>
+        </div>
+    </div>
+</section>
