@@ -1,217 +1,97 @@
-/*=============== VARIABLES ===============*/
-:root {
-    /* Colores principales */
-    --white-color: #fff;
-    --black-color: hsl(210, 12%, 15%);
-    --body-color: hsl(210, 16%, 12%);
-    --container-color: hsl(210, 24%, 8%);
-    --primary-color: #00abf0;
-    --primary-hover: #008cbf;
-    /* Tipografía */
-    --body-font: "Poppins", sans-serif;
-    --h2-font-size: 1.25rem;
-    --normal-font-size: 0.938rem;
-}
+/* ==========================================================================
+   Promociones: tarjetas, filtros por estado y detalle
+   ========================================================================== */
 
-/*=============== BASE ===============*/
-.promociones-container {
-    max-width: 1200px;
-    margin: 2rem auto;
-    padding: 0 1.5rem;
-}
+.promos-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 1.25rem; }
+@media (max-width: 575.98px) { .promos-grid { grid-template-columns: 1fr; } }
 
-.promociones-title {
-    color: var(--primary-color);
-    text-align: center;
-    margin-bottom: 2rem;
-    font-size: 2rem;
-    font-weight: 600;
-    text-shadow: 0 0 10px rgba(0, 171, 240, 0.3);
-}
-
-/*=============== TARJETAS ===============*/
-
-/*=============== GRID LAYOUT ===============*/
-.cards-grid {
+.promo-card {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
-    gap: 2.5rem;
-    padding: 1rem 0;
-}
-
-/* Mantenemos todos los estilos originales de .card__article */
-.card__article {
-    --hue-1: 210;
-    --hue-2: 238;
-    position: relative;
-    color: var(--white-color);
-    text-align: center;
-    padding: 3rem 2rem 2.5rem;
-    border: 4px solid transparent;
-    background: linear-gradient(var(--container-color), var(--container-color)) padding-box, linear-gradient(135deg, hsl(var(--hue-1), 85%, 70%) 0%, var(--container-color), var(--container-color), hsl(var(--hue-2), 70%, 55%) 100%) border-box;
-    border-radius: 1.25rem;
-    width: 100%;
-    max-width: 440px;
-    margin: 0 auto;
+    grid-template-columns: 120px 1fr;
+    border-radius: var(--mg-radio);
     overflow: hidden;
-    transition: transform 0.3s ease;
+    background: linear-gradient(180deg, var(--mg-superficie-2), var(--mg-superficie));
+    border: 1px solid var(--mg-borde);
+    transition: transform .3s ease, box-shadow .3s ease, border-color .3s ease;
 }
+.promo-card:hover { transform: translateY(-4px); border-color: rgba(0, 171, 240, .55); box-shadow: 0 20px 40px -20px rgba(0, 171, 240, .6); }
 
-.card__shape-1 {
+.promo-descuento {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 1rem .5rem;
+    background:
+        radial-gradient(circle at 30% 20%, rgba(255, 255, 255, .18), transparent 60%),
+        linear-gradient(160deg, #00abf0, #0063a8);
+    color: #fff; text-align: center;
     position: relative;
-    width: 148px;
-    height: 148px;
-    background: linear-gradient(140deg, hsl(var(--hue-1), 75%, 25%) 3%, hsl(var(--hue-2), 65%, 45%) 100%);
-    border-radius: 2rem;
-    z-index: 2;
 }
-
-.card__shape-2 {
-    width: 116px;
-    height: 116px;
-    background: linear-gradient(140deg, hsl(var(--hue-1), 70%, 50%) 3%, hsl(var(--hue-2), 95%, 45%) 100%);
-    border-radius: 1.5rem;
+.promo-descuento::after {
+    /* borde de "cupón" */
+    content: ''; position: absolute; right: -7px; top: 0; bottom: 0; width: 14px;
+    background: radial-gradient(circle at 7px 10px, var(--mg-superficie) 5px, transparent 5.5px) 0 0 / 14px 20px repeat-y;
 }
+.promo-descuento strong { font-family: var(--mg-titulo); font-size: 2.6rem; line-height: 1; font-weight: 400; }
+.promo-descuento strong span { font-size: 1.3rem; }
+.promo-descuento small { font-size: .7rem; letter-spacing: .1em; text-transform: uppercase; opacity: .85; margin-top: .35rem; }
 
-.card__shape-3 {
-    width: 76px;
-    height: 76px;
-    background: linear-gradient(140deg, hsl(var(--hue-1), 85%, 60%) 3%, hsl(var(--hue-2), 85%, 60%) 100%);
-    border-radius: 1rem;
+.promo-card.promo-proxima .promo-descuento { background: linear-gradient(160deg, #7c5cff, #4b2fc9); }
+.promo-card.promo-finalizada .promo-descuento { background: linear-gradient(160deg, #3b5064, #26394a); }
+.promo-card.promo-finalizada { opacity: .7; }
+
+.promo-cuerpo { padding: 1.2rem 1.35rem 1.2rem 1.6rem; display: flex; flex-direction: column; min-width: 0; }
+.promo-cuerpo h3 { font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 1.1rem; margin: 0 0 .35rem; }
+.promo-cuerpo p { color: #aebdca; font-size: .9rem; margin: 0 0 1rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.promo-pie { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .75rem; margin-top: auto; }
+.promo-fechas { font-size: .8rem; color: var(--mg-texto-suave); display: flex; flex-wrap: wrap; align-items: center; gap: .35rem .5rem; }
+.promo-fechas i { color: var(--mg-neon); }
+.promo-fechas em { font-style: normal; color: #ffd27a; font-weight: 600; }
+
+.promo-activa .promo-estado { background: rgba(46, 212, 122, .12); color: #7ef0b0; border-color: rgba(46, 212, 122, .35); }
+.promo-proxima .promo-estado { background: rgba(124, 92, 255, .15); color: #c3b5ff; border-color: rgba(124, 92, 255, .4); }
+.promo-finalizada .promo-estado { background: rgba(255, 255, 255, .05); color: var(--mg-texto-suave); border-color: var(--mg-borde-suave); }
+
+/* Filtro por estado */
+.tabs-estado { display: inline-flex; flex-wrap: wrap; gap: .4rem; padding: .35rem; border-radius: 999px; background: rgba(4, 18, 28, .55); border: 1px solid var(--mg-borde); margin-bottom: 1.75rem; }
+.tabs-estado button { border: 0; background: transparent; color: var(--mg-texto); padding: .45rem 1.1rem; border-radius: 999px; font-size: .88rem; font-weight: 500; }
+.tabs-estado button span { color: var(--mg-texto-suave); margin-left: .3rem; font-weight: 400; }
+.tabs-estado button.activo { background: var(--mg-neon); color: #04121c; font-weight: 600; }
+.tabs-estado button.activo span { color: #04121c; opacity: .7; }
+
+/* ---------------------------------------------------------------- Detalle */
+.promo-hero {
+    position: relative;
     display: grid;
-    place-items: center;
+    grid-template-columns: auto 1fr;
+    gap: clamp(1.25rem, 4vw, 2.5rem);
+    align-items: center;
+    padding: clamp(1.5rem, 4vw, 2.75rem);
+    border-radius: 24px;
+    overflow: hidden;
+    background:
+        radial-gradient(500px 260px at 100% 0%, rgba(0, 171, 240, .35), transparent 70%),
+        radial-gradient(400px 220px at 0% 100%, rgba(255, 71, 87, .18), transparent 70%),
+        linear-gradient(135deg, #103552, #0a2031);
+    border: 1px solid var(--mg-borde);
+    margin-bottom: 2.5rem;
 }
-
-.card__shape-2, .card__shape-3 {
-    position: absolute;
-    inset: 0;
-    margin: auto;
+.promo-hero-descuento {
+    width: clamp(120px, 16vw, 170px); aspect-ratio: 1;
+    border-radius: 50%;
+    display: flex; text-align: center; flex-shrink: 0;
+    background: conic-gradient(from 200deg, var(--mg-neon), #7c5cff, var(--mg-oferta), var(--mg-neon));
+    padding: 5px;
+    box-shadow: 0 0 40px rgba(0, 171, 240, .45);
 }
+.promo-hero-descuento > div { flex: 1; border-radius: 50%; background: #0b2233; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.promo-hero-descuento strong { font-family: var(--mg-titulo); font-size: clamp(1.9rem, 4vw, 2.7rem); line-height: 1; color: #fff; font-weight: 400; letter-spacing: -.02em; }
+.promo-hero-descuento strong span { font-size: .55em; margin-left: .05em; }
+.promo-hero-descuento small { font-size: .7rem; letter-spacing: .12em; text-transform: uppercase; color: #9ee3ff; margin-top: .3rem; }
+.promo-hero h1 { font-family: var(--mg-titulo); font-size: clamp(1.7rem, 4vw, 2.6rem); margin: .5rem 0; }
+.promo-hero p { color: #c3cfda; margin: 0 0 1rem; max-width: 46rem; }
+.promo-hero-datos { display: flex; flex-wrap: wrap; gap: .5rem 1.5rem; color: var(--mg-texto-suave); font-size: .9rem; }
+.promo-hero-datos i { color: var(--mg-neon); margin-right: .35rem; }
 
-.card__icon {
-    font-size: 3rem;
-}
-
-.card__data {
-    z-index: 3;
-}
-
-.card__title {
-    font-size: var(--h2-font-size);
-    margin-bottom: 0.25rem;
-    font-weight: 600;
-}
-
-.card__subtitle {
-    font-size: 0.9rem;
-    margin-bottom: 0.5rem;
-    font-weight: 500;
-    color: #c4c4c4;
-}
-
-.card__description {
-    margin-bottom: 1.5rem;
-}
-
-.card__button {
-    display: inline-block;
-    background-color: var(--white-color);
-    padding: 1rem 1.5rem;
-    border-radius: 0.5rem;
-    color: var(--black-color);
-    font-weight: 500;
-}
-
-.card__orange {
-    --hue-1: 300;
-    --hue-2: 30;
-}
-
-.card__green {
-    --hue-1: 180;
-    --hue-2: 50;
-}
-
-.card__scale-1 {
-    width: 148px;
-    height: 148px;
-    background: linear-gradient(140deg, hsl(var(--hue-1), 70%, 50%) 3%, hsl(var(--hue-2), 95%, 45%) 100%);
-    border-radius: 2rem;
-    top: 4rem;
-}
-
-.card__scale-2 {
-    width: 116px;
-    height: 116px;
-    background: var(--container-color);
-    border-radius: 1.5rem;
-    top: 5rem;
-}
-
-.card__scale-1, .card__scale-2 {
-    position: absolute;
-    filter: blur(24px);
-    transition: transform 0.3s ease-in;
-}
-
-.card__article:hover .card__scale-1 {
-    transform: scale(6);
-}
-
-.card__article:hover .card__scale-2 {
-    transform: scale(6);
-    transition-delay: 0.1s;
-}
-
-
-
-
-/*=============== RESPONSIVE ===============*/
-@media screen and (min-width: 576px) {
-    .card__container {
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    }
-
-    .card__article {
-        padding: 3rem 2rem 2.5rem;
-    }
-}
-
-@media screen and (min-width: 992px) {
-    .promociones-container {
-        padding: 0 2rem;
-    }
-
-    .card__container {
-        gap: 2rem;
-    }
-
-    .promociones-title {
-        font-size: 2.5rem;
-        margin-bottom: 3rem;
-    }
-}
-
-/*=============== INTEGRACIÓN CON LAYOUT ===============*/
-/* Asegura que el contenido no se solape con el footer */
-main {
-    padding-bottom: 2rem;
-    position: relative;
-    z-index: 2;
-}
-
-/* Ajustes para el tema oscuro */
-body {
-    background-color: #081b29;
-    color: #fff;
-}
-
-/* Corrige el z-index para que los efectos no interfieran con otros elementos */
-.card__scale-1,
-.card__scale-2 {
-    z-index: 1;
-}
-
-.card__article {
-    z-index: 2;
+@media (max-width: 575.98px) {
+    .promo-hero { grid-template-columns: 1fr; text-align: center; justify-items: center; }
+    .promo-hero-datos { justify-content: center; }
 }
