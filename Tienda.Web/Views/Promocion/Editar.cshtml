@@ -1,174 +1,41 @@
-﻿@model Tienda.Application.DTOs.PromocionDTO
-
+@model Tienda.Application.DTOs.PromocionDTO
+@{
+    ViewData["Title"] = $"Editar {Model.Nombre}";
+}
 @section Styles {
-    <link rel="stylesheet" href="~/css/stylesEliminar.css">
+    <link rel="stylesheet" href="~/css/admin.css" asp-append-version="true" />
 }
 
-@if (TempData["SuccessMessage"] != null)
-{
-    <div class="alert alert-success">
-        @TempData["SuccessMessage"]
+<partial name="_AdminTabs" />
+
+<nav class="migas" aria-label="Ruta">
+    <a asp-controller="Promocion" asp-action="Crear">Promociones</a><i class="bi bi-chevron-right"></i>
+    <span>Editar</span>
+</nav>
+
+<header class="encabezado">
+    <div>
+        <span class="antetitulo">Administración</span>
+        <h1>@Model.Nombre</h1>
+        <p>Los cambios se reflejan de inmediato en los precios de la tienda.</p>
     </div>
-}
+    <a class="btn btn-contorno" asp-action="Details" asp-route-id="@Model.IdPromocion"><i class="bi bi-eye me-1"></i>Ver en la tienda</a>
+</header>
 
-<div class="productos-container" style="width: 100%; margin: 20px 0;">
-    <h2 class="categoria-title" style="padding: 10px 0; color: #DEDEDF; font-weight: bold; font-size: 1.5rem; text-align: initial;">Mantenimiento de Promociones</h2>
-
-    <form asp-action="Editar" method="post" asp-antiforgery="true" style="width: 90%" id="promocionForm">
-        <input type="hidden" asp-for="IdPromocion" />
-        @Html.AntiForgeryToken()
-        <div class="row">
-            <div class="col-md-6 mb-3">
-                <div class="form-group">
-                    <label class="control-label" style="color: #DEDEDF">Nombre</label>
-                    <input class="form-control" asp-for="Nombre" required
-                           oninvalid="this.setCustomValidity('Por favor ingresa el nombre de la promoción')"
-                           oninput="this.setCustomValidity('')" />
-                    <span asp-validation-for="Nombre" class="text-danger"></span>
-                </div>
+<div class="row justify-content-center">
+    <div class="col-xl-8">
+        <form asp-action="Editar" method="post" class="panel" id="formPromocion">
+            <input type="hidden" asp-for="IdPromocion" />
+            <h2 class="panel-titulo"><i class="bi bi-pencil-square"></i>Datos de la promoción</h2>
+            <partial name="_FormPromocion" model="Model" />
+            <div class="acciones-form">
+                <a class="btn btn-contorno" asp-action="Crear">Cancelar</a>
+                <button type="submit" class="btn btn-neon"><i class="bi bi-check2 me-1"></i>Guardar cambios</button>
             </div>
-
-            <div class="col-md-3 mb-3">
-                <div class="form-group">
-                    <label class="control-label" style="color: #DEDEDF">Fecha Inicio</label>
-                    <input type="date" class="form-control" asp-for="FechaInicio" required
-                           oninvalid="this.setCustomValidity('Por favor ingresa la fecha de inicio')"
-                           oninput="this.setCustomValidity('')" />
-                    <span asp-validation-for="FechaInicio" class="text-danger"></span>
-                </div>
-            </div>
-
-            <div class="col-md-3 mb-3">
-                <div class="form-group">
-                    <label class="control-label" style="color: #DEDEDF">Fecha Fin</label>
-                    <input type="date" class="form-control" asp-for="FechaFin" required
-                           oninvalid="this.setCustomValidity('Por favor ingresa la fecha de fin')"
-                           oninput="this.setCustomValidity('')" />
-                    <span asp-validation-for="FechaFin" class="text-danger"></span>
-                </div>
-            </div>
-
-            <div class="col-md-3 mb-3">
-                <div class="form-group">
-                    <label class="control-label" style="color: #DEDEDF">% Descuento</label>
-                    <input type="number" min="0.01" step="0.01" class="form-control" asp-for="Descuento" required
-                           oninvalid="this.setCustomValidity('El descuento debe ser un número válido mayor a 0')"
-                           oninput="this.setCustomValidity('')" />
-                    <span asp-validation-for="Descuento" class="text-danger"></span>
-                </div>
-            </div>
-
-            <div class="col-md-4 mb-3">
-                <div class="form-group">
-                    <label class="control-label" style="color: #DEDEDF">Tipo de Promoción</label>
-                    <select asp-for="IdTipoPromocion" class="form-control" required
-                            oninvalid="this.setCustomValidity('Por favor selecciona un tipo de promoción')"
-                            oninput="this.setCustomValidity('')">
-                        <option value="">Seleccione un tipo</option>
-                        @foreach (var tipo in ViewBag.TipoPromocion)
-                        {
-                            <option value="@tipo.IdTipoPromocion" selected="@(Model.IdTipoPromocion == tipo.IdTipoPromocion)">@tipo.Tipo</option>
-                        }
-                    </select>
-                    <span asp-validation-for="IdTipoPromocion" class="text-danger"></span>
-                </div>
-            </div>
-
-            <!-- Productos (solo para tipo 1) -->
-            <div class="col-md-4 mb-3" id="productosDropdownContainer" style="display: @(Model.IdTipoPromocion == 1 ? "block" : "none");">
-                <div class="form-group">
-                    <label class="control-label" style="color: #DEDEDF">Productos</label>
-                    <div class="dropdown">
-                        <button class="form-control text-start dropdown-toggle" type="button"
-                                id="dropdownProductos" data-bs-toggle="dropdown"
-                                aria-expanded="false">
-                            Seleccionar productos
-                        </button>
-                        <ul class="dropdown-menu" aria-labelledby="dropdownProductos" style="width:100%">
-                            @foreach (var producto in ViewBag.Productos)
-                            {
-                                <li class="ps-3">
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox"
-                                               name="selectedProducto"
-                                               value="@producto.IdProducto"
-                                               id="producto_@producto.IdProducto"
-                                               @(ViewBag.SelectedProductos != null && ViewBag.SelectedProductos.Contains(producto.IdProducto) ? "checked" : "")>
-                                        <label class="form-check-label" for="producto_@producto.IdProducto">
-                                            @producto.Nombre
-                                        </label>
-                                    </div>
-                                </li>
-                            }
-                        </ul>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Categorías (solo para tipo 2) -->
-            <div class="col-md-4 mb-3" id="categoriasDropdownContainer" style="display: @(Model.IdTipoPromocion == 2 ? "block" : "none");">
-                <div class="form-group">
-                    <label class="control-label" style="color: #DEDEDF">Categorías</label>
-                    <div class="dropdown">
-                        <button class="form-control text-start dropdown-toggle" type="button"
-                                id="dropdownCategorias" data-bs-toggle="dropdown"
-                                aria-expanded="false">
-                            Seleccionar categorías
-                        </button>
-                        <ul class="dropdown-menu" aria-labelledby="dropdownCategorias" style="width:100%">
-                            @foreach (var categoria in ViewBag.ListCategorias)
-                            {
-                                <li class="ps-3">
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox"
-                                               name="selectedCategoria"
-                                               value="@categoria.IdCategoria"
-                                               id="categoria_@categoria.IdCategoria"
-                                               @(ViewBag.SelectedCategorias != null && ViewBag.SelectedCategorias.Contains(categoria.IdCategoria) ? "checked" : "")>
-                                        <label class="form-check-label" for="categoria_@categoria.IdCategoria">
-                                            @categoria.Categoria1
-                                        </label>
-                                    </div>
-                                </li>
-                            }
-                        </ul>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-md-12 mb-3">
-                <div class="form-group">
-                    <label class="control-label" style="color: #DEDEDF">Descripción</label>
-                    <textarea class="form-control" asp-for="Descripcion" required
-                              oninvalid="this.setCustomValidity('Por favor ingresa una descripción')"
-                              oninput="this.setCustomValidity('')"></textarea>
-                    <span asp-validation-for="Descripcion" class="text-danger"></span>
-                </div>
-            </div>
-
-            <div class="col-md-12 mt-4">
-                <button type="submit" class="btn" style="padding: 10px 25px; background-color: #00abf0; color: white; text-decoration: none; border-radius: 30px; font-weight: 500;">
-                    Editar
-                </button>
-            </div>
-        </div>
-    </form>
+        </form>
+    </div>
 </div>
 
 @section Scripts {
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const tipoSelect = document.getElementById('IdTipoPromocion');
-            const prodDiv = document.getElementById('productosDropdownContainer');
-            const catDiv = document.getElementById('categoriasDropdownContainer');
-
-            function toggleDropdowns(value) {
-                prodDiv.style.display = value == 1 ? 'block' : 'none';
-                catDiv.style.display = value == 2 ? 'block' : 'none';
-            }
-
-            tipoSelect.addEventListener('change', (e) => toggleDropdowns(e.target.value));
-            toggleDropdowns(tipoSelect.value);
-        });
-    </script>
+    <script src="~/js/admin.js" asp-append-version="true"></script>
 }

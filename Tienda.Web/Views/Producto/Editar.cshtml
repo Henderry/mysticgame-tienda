@@ -1,149 +1,76 @@
-﻿@model Tienda.Application.DTOs.ProductoDTO
-
+@model Tienda.Application.DTOs.ProductoDTO
+@using Tienda.Web.Util
+@{
+    ViewData["Title"] = $"Editar {Model.Nombre}";
+    ViewData["CampoEtiquetas"] = "selectedEtiquetas";
+    var imagenes = Model.ImagenProducto?.OrderByDescending(i => i.Principal).ToList() ?? new();
+}
 @section Styles {
-
-    <link rel="stylesheet" href="~/css/stylesEliminar.css">
+    <link rel="stylesheet" href="~/css/admin.css" asp-append-version="true" />
 }
-@if (TempData["SuccessMessage"] != null)
-{
-    <div class="alert alert-success">
-        @TempData["SuccessMessage"]
+
+<partial name="_AdminTabs" />
+
+<nav class="migas" aria-label="Ruta">
+    <a asp-controller="Producto" asp-action="Crear">Productos</a><i class="bi bi-chevron-right"></i>
+    <span>Editar</span>
+</nav>
+
+<header class="encabezado">
+    <div>
+        <span class="antetitulo">Administración</span>
+        <h1>@Model.Nombre</h1>
+        <p>Actualiza la información, las etiquetas y las imágenes del producto.</p>
     </div>
-}
+    <div class="d-flex gap-2">
+        <a class="btn btn-contorno" asp-action="Details" asp-route-id="@Model.IdProducto"><i class="bi bi-eye me-1"></i>Ver en la tienda</a>
+    </div>
+</header>
 
-<div class="productos-container" style="width: 100%;margin: 20px 0;">
-    <h2 class="categoria-title" style="padding: 10px 0;color: #DEDEDF; font-weight: bold;font-size: 1.5rem;text-align: initial;">Mantenimientos Productos</h2>
-
-    <form asp-action="Editar" method="post" asp-antiforgery="true" enctype="multipart/form-data" style="width: 90%" id="productForm">
-        <input type="hidden" asp-for="IdProducto" />
-        @Html.AntiForgeryToken()
-        <div class="row">
-            <div class="col-md-6 mb-3">
-                <div class="form-group">
-                    <label class="control-label" style="color: #DEDEDF">Nombre</label>
-                    <input class="form-control" asp-for="Nombre" required
-                           oninvalid="this.setCustomValidity('Por favor ingresa el nombre del producto')"
-                           oninput="this.setCustomValidity('')" />
-                    <span asp-validation-for="Nombre" class="text-danger"></span>
-                </div>
+<div class="row g-4">
+    <div class="col-xl-7">
+        <form asp-action="Editar" method="post" enctype="multipart/form-data" class="panel" id="formProducto">
+            <input type="hidden" asp-for="IdProducto" />
+            <h2 class="panel-titulo"><i class="bi bi-pencil-square"></i>Datos del producto</h2>
+            <partial name="_FormProducto" model="Model" view-data="ViewData" />
+            <div class="acciones-form">
+                <a class="btn btn-contorno" asp-action="Crear">Cancelar</a>
+                <button type="submit" class="btn btn-neon"><i class="bi bi-check2 me-1"></i>Guardar cambios</button>
             </div>
+        </form>
+    </div>
 
-            <div class="col-md-3 mb-3">
-                <div class="form-group">
-                    <label class="control-label" style="color: #DEDEDF">Cantidad</label>
-                    <input type="number" class="form-control" asp-for="Stock" required
-                           min="0" step="1"
-                           oninvalid="this.setCustomValidity('La cantidad debe ser un número válido')"
-                           oninput="this.setCustomValidity('')" />
-                    <span asp-validation-for="Stock" class="text-danger"></span>
-                </div>
-            </div>
-
-            <div class="col-md-3 mb-3">
-                <div class="form-group">
-                    <label class="control-label" style="color: #DEDEDF">Precio</label>
-                    <input type="number" min="0.01" step="0.01" class="form-control" asp-for="Precio" required
-                           oninvalid="this.setCustomValidity('El precio debe ser un número válido mayor a 0')"
-                           oninput="this.setCustomValidity('')" />
-                    <span asp-validation-for="Precio" class="text-danger"></span>
-                </div>
-            </div>
-
-            <!-- Categorias -->
-            <div class="col-md-4 mb-3">
-                <div class="form-group">
-                    <label class="control-label" style="color: #DEDEDF">Categoría</label>
-                    <select asp-for="IdCategoria" class="form-control" required
-                            oninvalid="this.setCustomValidity('Por favor selecciona una categoría')"
-                            oninput="this.setCustomValidity('')">
-                        <option value="">Seleccione una categoría</option>
-                        @foreach (var categoria in ViewBag.ListCategorias)
-                        {
-                            <option value="@categoria.IdCategoria">@categoria.Categoria1</option>
-                        }
-                    </select>
-                    <span asp-validation-for="IdCategoria" class="text-danger"></span>
-                </div>
-            </div>
-
-            <!--Etiquetas -->
-            <div class="col-md-4 mb-3">
-                <div class="dropdown">
-                    <label class="control-label" style="color: #DEDEDF">Etiquetas</label>
-                    <button class="form-control text-start dropdown-toggle" type="button"
-                            id="dropdownEtiquetas" data-bs-toggle="dropdown"
-                            aria-expanded="false">
-                        Etiquetas
-                    </button>
-                    <ul class="dropdown-menu" aria-labelledby="dropdownEtiquetas" style="width:100%">
-                        @foreach (var etiqueta in ViewBag.ListEtiquetas)
-                        {
-                            <li class="ps-3">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox"
-                                           name="selectedEtiquetas"
-                                           value="@etiqueta.IdEtiqueta"
-                                           id="etiqueta_@etiqueta.IdEtiqueta"
-                                    @(ViewBag.EtiquetasDelProducto != null && ViewBag.EtiquetasDelProducto.Contains(etiqueta.IdEtiqueta) ? "checked" : "")>
-                                    <label class="form-check-label" for="etiqueta_@etiqueta.IdEtiqueta">
-                                        @etiqueta.Etiqueta1
-                                    </label>
-                                </div>
-                            </li>
-                        }
-                    </ul>
-                </div>
-            </div>
-
-
-            <div class="col-md-12 mb-3">
-                <div class="form-group">
-                    <label class="control-label" style="color: #DEDEDF">Descripción</label>
-                    <textarea class="form-control" asp-for="Descripcion" required
-                              oninvalid="this.setCustomValidity('Por favor ingresa una descripción')"
-                              oninput="this.setCustomValidity('')"></textarea>
-                    <span asp-validation-for="Descripcion" class="text-danger"></span>
-                </div>
-            </div>
-
-
-            <div class="col-md-12 mb-3">
-                <div class="form-group">
-                    <label class="control-label" style="color: #DEDEDF">Imágenes del producto</label>
-                    <input type="file" id="imageUpload" name="imageFiles" multiple accept="image/*" />
-
-                    <div class="image-preview-container" id="imagePreviewContainer"></div>
-                </div>
-            </div>
-
-            <div class="col-md-12 mt-4">
-                <button type="submit" class="btn" style="padding: 10px 25px; background-color: #00abf0; color: white;text-decoration: none;border-radius: 30px; font-weight: 500;">
-                    Editar
-                </button>
-            </div>
-        </div>
-    </form>
-</div>
-
-<section class="product-images-section">
-    <h2 style="font-family:'Poppins', sans-serif; font-size: 1.3rem; color: white; text-transform: uppercase;">Imágenes del Producto</h2>
-    <div class="container" style="padding: 5rem 10rem;">
-        <div id="images-track" data-mouse-down-at="0" data-prev-percentage="0">
-            @foreach (var imagen in Model.ImagenProducto)
+    <div class="col-xl-5">
+        <section class="panel" aria-labelledby="tituloImagenes">
+            <h2 class="panel-titulo" id="tituloImagenes"><i class="bi bi-images"></i>Imágenes actuales <span class="chip ms-auto">@imagenes.Count</span></h2>
+            @if (imagenes.Any())
             {
-                <div class="image-item">
-                    <img class="product-image" src="data:image/jpeg;base64,@Convert.ToBase64String(imagen.Foto)" draggable="false" alt="Imagen del producto" />
-                    <div class="image-overlay">
-                        <form asp-action="DeleteEImagen" method="post" asp-antiforgery="true" class="delete-form">
-                            <input type="hidden" name="idProducto" value="@Model.IdProducto" />
-                            <input type="hidden" name="idImagen" value="@imagen.IdImagen" />
-                            <button type="submit" class="delete-btn">
-                                <i class="fas fa-trash-alt"></i> Eliminar
-                            </button>
-                        </form>
-                    </div>
+                <div class="imagenes-admin">
+                    @foreach (var imagen in imagenes)
+                    {
+                        <figure class="imagen-admin">
+                            <img src="@Formato.Base64(imagen.Foto)" alt="Imagen del producto" loading="lazy" />
+                            @if (imagen.Principal)
+                            {
+                                <span class="chip imagen-principal"><i class="bi bi-star-fill"></i>Principal</span>
+                            }
+                            <form asp-action="DeleteEImagen" method="post" data-confirmar="¿Eliminar esta imagen?">
+                                <input type="hidden" name="idProducto" value="@Model.IdProducto" />
+                                <input type="hidden" name="idImagen" value="@imagen.IdImagen" />
+                                <button type="submit" class="btn-eliminar-imagen" aria-label="Eliminar imagen"><i class="bi bi-trash3"></i></button>
+                            </form>
+                        </figure>
+                    }
                 </div>
             }
-        </div>
+            else
+            {
+                <p class="text-secondary mb-0">Este producto todavía no tiene imágenes. Agrégalas desde el formulario.</p>
+            }
+        </section>
     </div>
-</section>
+</div>
+
+@section Scripts {
+    <script src="~/js/admin.js" asp-append-version="true"></script>
+}

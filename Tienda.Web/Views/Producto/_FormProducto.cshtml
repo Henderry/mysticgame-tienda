@@ -1,0 +1,73 @@
+@model Tienda.Application.DTOs.ProductoDTO
+@{
+    // "selectedEtiqueta" en Crear y "selectedEtiquetas" en Editar (nombres que espera el controlador)
+    var campoEtiquetas = ViewData["CampoEtiquetas"] as string ?? "selectedEtiqueta";
+    var categorias = ViewBag.ListCategorias as IEnumerable<Tienda.Application.DTOs.CategoriaDTO> ?? Enumerable.Empty<Tienda.Application.DTOs.CategoriaDTO>();
+    var etiquetas = ViewBag.ListEtiquetas as IEnumerable<Tienda.Application.DTOs.EtiquetaDTO> ?? Enumerable.Empty<Tienda.Application.DTOs.EtiquetaDTO>();
+    var seleccionadas = ViewBag.EtiquetasDelProducto as List<int> ?? new List<int>();
+}
+<div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+<div class="row g-3">
+    <div class="col-md-8">
+        <label asp-for="Nombre" class="form-label">Nombre</label>
+        <input asp-for="Nombre" class="form-control" placeholder="Ej.: The Last of Us Parte II" required maxlength="100" />
+        <span asp-validation-for="Nombre" class="text-danger small"></span>
+    </div>
+    <div class="col-md-4">
+        <label asp-for="IdCategoria" class="form-label">Categoría</label>
+        <select asp-for="IdCategoria" class="form-select" required>
+            <option value="">Seleccione…</option>
+            @foreach (var categoria in categorias)
+            {
+                <option value="@categoria.IdCategoria" selected="@(Model.IdCategoria == categoria.IdCategoria)">@categoria.Categoria1</option>
+            }
+        </select>
+        <span asp-validation-for="IdCategoria" class="text-danger small"></span>
+    </div>
+
+    <div class="col-sm-6 col-md-4">
+        <label asp-for="Precio" class="form-label">Precio</label>
+        <div class="input-group">
+            <span class="input-group-text">₡</span>
+            <input asp-for="Precio" type="number" min="1" step="any" class="form-control" placeholder="0" required />
+        </div>
+        <span asp-validation-for="Precio" class="text-danger small"></span>
+    </div>
+    <div class="col-sm-6 col-md-4">
+        <label asp-for="Stock" class="form-label">Unidades en stock</label>
+        <input asp-for="Stock" type="number" min="0" step="1" class="form-control" required />
+        <span asp-validation-for="Stock" class="text-danger small"></span>
+    </div>
+
+    <div class="col-12">
+        <span class="form-label d-block">Etiquetas</span>
+        <div class="chips-seleccion" role="group" aria-label="Etiquetas">
+            @foreach (var etiqueta in etiquetas)
+            {
+                <input type="checkbox" class="btn-check" name="@campoEtiquetas" value="@etiqueta.IdEtiqueta"
+                       id="etiqueta_@etiqueta.IdEtiqueta" autocomplete="off"
+                       @(seleccionadas.Contains(etiqueta.IdEtiqueta) ? "checked" : "") />
+                <label class="chip-opcion" for="etiqueta_@etiqueta.IdEtiqueta">@etiqueta.Etiqueta1</label>
+            }
+        </div>
+    </div>
+
+    <div class="col-12">
+        <label asp-for="Descripcion" class="form-label">Descripción</label>
+        <textarea asp-for="Descripcion" class="form-control" rows="4" required
+                  placeholder="Características, plataforma, qué incluye…"></textarea>
+        <span asp-validation-for="Descripcion" class="text-danger small"></span>
+    </div>
+
+    <div class="col-12">
+        <span class="form-label d-block">Imágenes</span>
+        <label class="zona-carga" for="imageUpload">
+            <i class="bi bi-cloud-arrow-up"></i>
+            <span><strong>Haz clic para elegir imágenes</strong> o arrástralas aquí</span>
+            <small>JPG o PNG, hasta 5 MB cada una. La primera será la imagen principal.</small>
+            <input type="file" id="imageUpload" name="imageFiles" multiple accept="image/*" />
+        </label>
+        <div class="vista-previa" id="vistaPrevia"></div>
+    </div>
+</div>
