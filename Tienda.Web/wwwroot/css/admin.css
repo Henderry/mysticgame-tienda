@@ -1,0 +1,92 @@
+/* ==========================================================================
+   Administración (mantenimientos de productos y promociones)
+   ========================================================================== */
+
+.admin-tabs { display: inline-flex; gap: .35rem; padding: .35rem; border-radius: 999px; background: rgba(4, 18, 28, .55); border: 1px solid var(--mg-borde); margin-bottom: 1.5rem; }
+.admin-tabs a { display: inline-flex; align-items: center; gap: .45rem; padding: .45rem 1.1rem; border-radius: 999px; color: var(--mg-texto); font-weight: 500; font-size: .9rem; }
+.admin-tabs a:hover { color: #fff; background: rgba(255, 255, 255, .05); }
+.admin-tabs a.activo { background: var(--mg-neon); color: #04121c; font-weight: 600; }
+
+.panel-titulo { display: flex; align-items: center; gap: .6rem; font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 1.1rem; margin-bottom: 1.25rem; color: #fff; }
+.panel-titulo i { color: var(--mg-neon); }
+.panel-cabecera { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: 1.25rem 1.25rem 1rem; }
+.acciones-form { display: flex; justify-content: flex-end; gap: .75rem; margin-top: 1.75rem; padding-top: 1.25rem; border-top: 1px solid var(--mg-borde-suave); }
+
+.tabla-scroll { max-height: 640px; overflow-y: auto; }
+.tabla-scroll thead th { position: sticky; top: 0; background: #0f2a40; z-index: 1; }
+.min-w-0 { min-width: 0; }
+/* La primera columna ocupa el espacio libre y trunca los nombres largos en lugar de ensanchar la tabla */
+.celda-flexible { width: 100%; max-width: 0; }
+.miniatura-vacia { display: grid; place-items: center; color: #6f8699; font-size: 1.2rem; }
+.btn-tabla { display: inline-grid; place-items: center; width: 34px; height: 34px; border-radius: 10px; color: var(--mg-texto); border: 1px solid var(--mg-borde); transition: all .2s; }
+.btn-tabla:hover { color: #04121c; background: var(--mg-neon); border-color: var(--mg-neon); }
+.btn-tabla + .btn-tabla { margin-left: .25rem; }
+
+.punto-estado { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: .4rem; vertical-align: middle; }
+.estado-activa { background: var(--mg-exito); box-shadow: 0 0 8px var(--mg-exito); }
+.estado-proxima { background: #7c5cff; }
+.estado-finalizada { background: #4b6175; }
+
+/* Chips seleccionables (etiquetas, categorías) */
+.chips-seleccion { display: flex; flex-wrap: wrap; gap: .5rem; }
+.chip-opcion {
+    display: inline-flex; align-items: center; gap: .35rem;
+    padding: .42rem .95rem; border-radius: 999px; cursor: pointer; user-select: none;
+    border: 1px solid rgba(143, 163, 181, .25); color: var(--mg-texto); font-size: .85rem; font-weight: 500;
+    transition: all .15s;
+}
+.chip-opcion:hover { border-color: var(--mg-neon); }
+.btn-check:checked + .chip-opcion { background: rgba(0, 171, 240, .16); border-color: var(--mg-neon); color: #fff; }
+.btn-check:checked + .chip-opcion::before { content: '\F26E'; font-family: 'bootstrap-icons'; color: var(--mg-neon); }
+.btn-check:focus-visible + .chip-opcion, .btn-check:focus-visible + .tipo-opcion { box-shadow: 0 0 0 .2rem rgba(0, 171, 240, .35); }
+
+/* Tipo de promoción */
+.selector-tipo { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: .75rem; }
+.tipo-opcion {
+    display: flex; gap: .85rem; align-items: center; cursor: pointer;
+    padding: .9rem 1rem; border-radius: 12px; border: 1px solid rgba(143, 163, 181, .22);
+    background: rgba(4, 18, 28, .4); transition: all .15s;
+}
+.tipo-opcion i { font-size: 1.4rem; color: var(--mg-texto-suave); }
+.tipo-opcion strong { display: block; color: #fff; font-weight: 600; }
+.tipo-opcion small { color: var(--mg-texto-suave); font-size: .8rem; }
+.tipo-opcion:hover { border-color: var(--mg-neon); }
+.btn-check:checked + .tipo-opcion { border-color: var(--mg-neon); background: rgba(0, 171, 240, .1); box-shadow: inset 0 0 0 1px var(--mg-neon); }
+.btn-check:checked + .tipo-opcion i { color: var(--mg-neon); }
+
+/* Lista de productos con casillas */
+.lista-opciones { max-height: 260px; overflow-y: auto; border: 1px solid rgba(143, 163, 181, .2); border-radius: 12px; background: rgba(4, 18, 28, .4); }
+.opcion { display: grid; grid-template-columns: auto 1fr auto; gap: .75rem; align-items: center; padding: .6rem .9rem; cursor: pointer; border-bottom: 1px solid var(--mg-borde-suave); font-size: .9rem; }
+.opcion:last-child { border-bottom: 0; }
+.opcion:hover { background: rgba(0, 171, 240, .06); }
+.opcion small { color: var(--mg-texto-suave); font-size: .75rem; }
+.opcion .form-check-input { margin: 0; }
+
+/* Carga de imágenes */
+.zona-carga {
+    position: relative; display: flex; flex-direction: column; align-items: center; gap: .35rem; text-align: center;
+    padding: 1.75rem 1rem; border-radius: 14px; cursor: pointer;
+    border: 1.5px dashed rgba(0, 171, 240, .45); background: rgba(0, 171, 240, .04);
+    color: var(--mg-texto); transition: all .2s;
+}
+.zona-carga i { font-size: 2rem; color: var(--mg-neon); }
+.zona-carga small { color: var(--mg-texto-suave); }
+.zona-carga input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.zona-carga:hover, .zona-carga.arrastrando { background: rgba(0, 171, 240, .1); border-color: var(--mg-neon); }
+
+.vista-previa, .imagenes-admin { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: .75rem; margin-top: 1rem; }
+.imagenes-admin { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); margin-top: 0; }
+.imagen-admin { position: relative; margin: 0; aspect-ratio: 1; border-radius: 12px; overflow: hidden; background: #fff; border: 1px solid var(--mg-borde); }
+.imagen-admin img { width: 100%; height: 100%; object-fit: contain; padding: 6px; }
+.imagen-admin.con-error { border-color: var(--mg-oferta); }
+.imagen-principal { position: absolute; left: 6px; bottom: 6px; font-size: .65rem; padding: .2rem .5rem; background: #0b2233; }
+.imagen-error { position: absolute; left: 6px; top: 6px; font-size: .65rem; padding: .2rem .5rem; }
+.imagen-admin form { position: absolute; top: 6px; right: 6px; margin: 0; }
+.btn-eliminar-imagen {
+    width: 32px; height: 32px; border-radius: 9px; border: 0;
+    background: rgba(11, 34, 51, .85); color: #ffb3ba; display: grid; place-items: center;
+    opacity: 0; transition: opacity .2s, background .2s;
+}
+.imagen-admin:hover .btn-eliminar-imagen, .btn-eliminar-imagen:focus-visible { opacity: 1; }
+.btn-eliminar-imagen:hover { background: var(--mg-oferta); color: #fff; }
+@media (hover: none) { .btn-eliminar-imagen { opacity: 1; } }
