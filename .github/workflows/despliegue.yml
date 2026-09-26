@@ -30,7 +30,7 @@ jobs:
           }
 
       - name: Compilar
-        run: dotnet publish Tienda.Web/Tienda.Web.csproj -c Release -r win-x86 --self-contained false -o publish
+        run: dotnet publish Tienda.Web/Tienda.Web.csproj -c Release -o publish
 
       - name: Publicar en MonsterASP.NET
         if: github.event_name != 'pull_request' && env.SERVER_PASSWORD != ''
