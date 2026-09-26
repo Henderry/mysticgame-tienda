@@ -1,9 +1,0 @@
-services:
-  - type: web
-    name: mysticgame-tienda
-    runtime: docker
-    plan: free
-    region: virginia
-    envVars:
-      - key: ConnectionStrings__SqlServerDataBase
-        sync: false

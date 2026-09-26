@@ -1,0 +1,42 @@
+name: Compilar y publicar
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  compilar:
+    runs-on: windows-latest
+    env:
+      SERVER_PASSWORD: ${{ secrets.SERVER_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Cadena de conexión de producción
+        if: github.event_name != 'pull_request'
+        shell: pwsh
+        env:
+          CADENA: ${{ secrets.CONNECTION_STRING }}
+        run: |
+          if ($env:CADENA) {
+            @{ ConnectionStrings = @{ SqlServerDataBase = $env:CADENA } } |
+              ConvertTo-Json | Set-Content -Encoding utf8 Tienda.Web/appsettings.Production.json
+          }
+
+      - name: Compilar
+        run: dotnet publish Tienda.Web/Tienda.Web.csproj -c Release -r win-x86 --self-contained false -o publish
+
+      - name: Publicar en MonsterASP.NET
+        if: github.event_name != 'pull_request' && env.SERVER_PASSWORD != ''
+        uses: rasmusbuchholdt/simply-web-deploy@2.1.0
+        with:
+          website-name: ${{ secrets.WEBSITE_NAME }}
+          server-computer-name: ${{ secrets.SERVER_COMPUTER_NAME }}
+          server-username: ${{ secrets.SERVER_USERNAME }}
+          server-password: ${{ secrets.SERVER_PASSWORD }}

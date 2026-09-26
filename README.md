@@ -5,9 +5,6 @@ en una arquitectura de tres capas (Web, Application e Infraestructure).
 
 Proyecto de curso de la UTN.
 
-**Demo:** https://mysticgame-tienda.onrender.com (la primera carga puede tardar cerca de un
-minuto porque el servidor gratuito y la base de datos se suspenden sin uso).
-
 ## Funcionalidades
 
 **Tienda**
@@ -69,9 +66,10 @@ inicio de sesión.
 
 ## Despliegue
 
-La demo corre en Render con el `Dockerfile` del repositorio y la base de datos en Azure SQL.
-La cadena de conexión se define con la variable de entorno
-`ConnectionStrings__SqlServerDataBase`.
+GitHub Actions compila el proyecto en cada cambio a `main` y lo publica en MonsterASP.NET
+por Web Deploy (`.github/workflows/despliegue.yml`). La cadena de conexión de producción se
+guarda como secreto del repositorio (`CONNECTION_STRING`) y se escribe en
+`appsettings.Production.json` al compilar.
 
 ## Autor
 

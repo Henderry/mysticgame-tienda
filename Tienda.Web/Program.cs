@@ -1,5 +1,4 @@
 ﻿using Libreria.Web.Middleware;
-using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -23,14 +22,6 @@ builder.Services.AddControllersWithViews();
 // Imágenes de productos de hasta 5 MB cada una
 builder.Services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(o => o.MultipartBodyLengthLimit = 50 * 1024 * 1024);
 builder.WebHost.ConfigureKestrel(o => o.Limits.MaxRequestBodySize = 50 * 1024 * 1024);
-
-// Detrás del proxy del hosting (HTTPS termina en el proxy)
-builder.Services.Configure<ForwardedHeadersOptions>(o =>
-{
-    o.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
-    o.KnownNetworks.Clear();
-    o.KnownProxies.Clear();
-});
 
 // Configurar Inyección de Dependencias (D.I.)
 // Repositorios
@@ -104,7 +95,6 @@ var logger = new LoggerConfiguration()
 builder.Host.UseSerilog(logger);
 
 var app = builder.Build();
-app.UseForwardedHeaders();
 
 // Cultura es-CR con punto decimal para los montos de los formularios
 var cultura = (CultureInfo)CultureInfo.GetCultureInfo("es-CR").Clone();
@@ -135,31 +125,6 @@ app.UseStatusCodePagesWithReExecute("/no-encontrado");
 app.UseSerilogRequestLogging();
 app.UseHttpsRedirection();
 app.UseStaticFiles();
-
-// Azure SQL serverless se pausa cuando no se usa; la primera conexión espera a que se reanude
-var ultimaConexion = DateTime.MinValue;
-app.Use(async (context, next) =>
-{
-    if (DateTime.UtcNow - ultimaConexion > TimeSpan.FromMinutes(30))
-    {
-        var db = context.RequestServices.GetRequiredService<VideoGameContext>();
-        for (var intento = 1; intento <= 12; intento++)
-        {
-            try
-            {
-                await db.Database.OpenConnectionAsync();
-                await db.Database.CloseConnectionAsync();
-                break;
-            }
-            catch (Microsoft.Data.SqlClient.SqlException) when (intento < 12)
-            {
-                await Task.Delay(TimeSpan.FromSeconds(5));
-            }
-        }
-    }
-    ultimaConexion = DateTime.UtcNow;
-    await next();
-});
 app.UseRouting();
 app.UseAuthorization();
 app.UseAntiforgery();
